@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ReportController;
@@ -23,6 +24,13 @@ Route::get('/report', [ReportController::class, 'index'])->name('report.index');
 
 // Search (GET with ?q=...)
 Route::get('/search', [OrderController::class, 'search'])->name('orders.search');
+
+// VIEW & UPDATE only.
+
+Route::get('/orders/lookup', [OrderController::class, 'searchOrder'])->name('orders.searchOrder');
+
+// find order
+Route::get('/customers/{id}/lookup', [CustomerController::class, 'lookup'])->name('customers.lookup');
 
 // Store new order
 Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');

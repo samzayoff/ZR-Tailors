@@ -49,6 +49,57 @@ class OrderController
         return view('orders.form', $this->viewData($order, $q));
     }
 
+    // ── search-only page
+    public function searchOrder(Request $request): View
+    {
+        $q  = trim($request->input('q', ''));
+        $cn = trim($request->input('cn', ''));
+
+        // Customer-number search
+        $customerSummary = null;
+        if ($cn !== '') {
+            $customer = ctype_digit($cn) ? Customer::find((int) $cn) : null;
+
+            if ($customer) {
+                $orders = $customer->orders()->latest('id')->get();
+
+                $totalPrice     = (float) $orders->sum('price');
+                $totalPaid      = (float) $orders->sum('advance_paid');
+
+                $customerSummary = [
+                    'found'           => true,
+                    'customer'        => $customer,
+                    'orders'          => $orders,
+                    'orders_count'    => $orders->count(),
+                    'total_price'     => $totalPrice,
+                    'total_paid'      => $totalPaid,
+                    'total_remaining' => $totalPrice - $totalPaid,
+                ];
+            } else {
+                $customerSummary = ['found' => false, 'cn' => $cn];
+            }
+        }
+
+        $order = null;
+        if ($q !== '') {
+            $order = Order::with([
+                'customer',
+                'garments.garmentType',
+                'garments.measurements.measurementPoint',
+                'designOptions',
+            ])
+            ->where('order_no', $q)
+            ->orWhereHas('customer', fn ($qb) => $qb->where('phone', $q))
+            ->latest()
+            ->first();
+        }
+
+        return view('orders.search', array_merge(
+            $this->viewData($order, $q),
+            ['cn' => $cn, 'customerSummary' => $customerSummary]
+        ));
+    }
+
     // store new order
     public function store(StoreOrderRequest $request): RedirectResponse
     {
@@ -88,6 +139,14 @@ class OrderController
             $this->syncDesignOptions($request, $order);
             $this->recordPaymentDelta($order, $previousAdvance, (float) $order->advance_paid);
         });
+
+        // If this update was submitted from the dedicated "search & update"
+        // page, send the user back there instead of the combined page —
+        // keeps that flow completely separate from new-order creation.
+        if ($request->input('return_to') === 'lookup') {
+            return redirect()->route('orders.searchOrder', ['q' => $order->order_no])
+                ->with('success', 'Order updated successfully.');
+        }
 
         return redirect()->route('orders.search', ['q' => $order->order_no])
             ->with('success', 'Order updated successfully.');

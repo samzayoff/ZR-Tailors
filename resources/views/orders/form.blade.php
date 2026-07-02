@@ -64,19 +64,31 @@
                     </div>
                     <div class="col-body">
                         <div class="cf">
+                            <label>Customer # <span style="font-weight:400;text-transform:none;color:var(--muted);">(load an
+                                    existing customer's details &amp; last measurements)</span></label>
+                            <div style="display:flex;gap:8px;">
+                                <input class="txt" type="number" min="1" id="customerLookupNo"
+                                    placeholder="e.g. 1" style="flex:1;">
+                                <button type="button" class="btn btn-ghost" id="customerLookupBtn"
+                                    style="flex:0 0 auto;padding:0 14px;">Find</button>
+                            </div>
+                            <div id="customerLookupResult" class="lookup-status" hidden></div>
+                        </div>
+                        <div class="cf">
                             <label>Name</label>
                             <input class="txt @error('name') is-invalid @enderror" type="text" name="name"
-                                value="{{ old('name', $order?->customer?->name) }}" placeholder="Customer name" required>
+                                id="customerNameInput" value="{{ old('name', $order?->customer?->name) }}"
+                                placeholder="Customer name" required>
                         </div>
                         <div class="cf">
                             <label>S/O · Reference</label>
-                            <input class="txt" type="text" name="reference"
+                            <input class="txt" type="text" name="reference" id="customerReferenceInput"
                                 value="{{ old('reference', $order?->customer?->reference) }}" placeholder="—">
                         </div>
                         <div class="cf">
                             <label>Phone</label>
-                            <input type="text" name="phone" value="{{ old('phone', $order?->customer?->phone) }}"
-                                placeholder="03XXXXXXXXX">
+                            <input type="text" name="phone" id="customerPhoneInput"
+                                value="{{ old('phone', $order?->customer?->phone) }}" placeholder="03XXXXXXXXX">
                         </div>
                         <div class="cf">
                             <label>Suit / Order No</label>
@@ -87,9 +99,17 @@
                         </div>
                         <div class="cf">
                             <label>Booking Date</label>
-                            <input class="@error('booking_date') is-invalid @enderror" type="date" name="booking_date"
-                                value="{{ old('booking_date', $order?->booking_date?->format('Y-m-d')) }}"
-                                placeholder="dd/mm/yyyy" required>
+                            @if ($order)
+                                <input class="@error('booking_date') is-invalid @enderror" type="date"
+                                    name="booking_date"
+                                    value="{{ old('booking_date', $order->booking_date?->format('Y-m-d')) }}"
+                                    placeholder="dd/mm/yyyy" required>
+                            @else
+                                <input type="hidden" name="booking_date"
+                                    value="{{ old('booking_date', now()->format('Y-m-d')) }}">
+                                <input type="text" value="{{ now()->format('d M Y') }}" readonly
+                                    style="background:#f5f5f0;cursor:not-allowed;opacity:0.8;">
+                            @endif
                         </div>
                         <div class="cf">
                             <label>Delivery Date</label>
@@ -144,7 +164,7 @@
                             <div class="summary-row">
                                 <span class="summary-k">Booked</span>
                                 <span class="summary-v" id="summBooking">
-                                    {{ $order?->booking_date?->format('d M Y') ?? '—' }}
+                                    {{ $order?->booking_date?->format('d M Y') ?? now()->format('d M Y') }}
                                 </span>
                             </div>
                             <div class="summary-row">
@@ -567,6 +587,119 @@
                 document.getElementById('nav').classList.remove('open');
             });
         });
+
+        // ── Customer # lookup — loads directly into this order's fields ──
+        // Fetches an existing customer and fills their Name / S-O Reference /
+        // Phone, plus their last order's measurements straight into the
+        // Kameez & Waistcoat measurement inputs on THIS order. Values land in
+        // their normal fields (not a separate panel) and stay fully editable
+        // afterwards. Price and Paid are never touched — this order's amounts
+        // always stay independent of the customer's past orders.
+        (function() {
+            var input = document.getElementById('customerLookupNo');
+            var btn = document.getElementById('customerLookupBtn');
+            var status = document.getElementById('customerLookupResult');
+
+            function escapeHtml(s) {
+                return String(s).replace(/[&<>"']/g, function(c) {
+                    return ({
+                        '&': '&amp;',
+                        '<': '&lt;',
+                        '>': '&gt;',
+                        '"': '&quot;',
+                        "'": '&#39;'
+                    })[c];
+                });
+            }
+
+            function showStatus(text, isError) {
+                status.hidden = false;
+                status.textContent = text;
+                status.className = 'lookup-status' + (isError ? ' is-error' : ' is-ok');
+            }
+
+            function flashField(el) {
+                if (!el) return;
+                el.classList.remove('just-filled');
+                // force reflow so the animation can restart if triggered twice
+                void el.offsetWidth;
+                el.classList.add('just-filled');
+            }
+
+            function fillField(id, value) {
+                var el = document.getElementById(id);
+                if (!el || value === undefined || value === null) return;
+                el.value = value;
+                flashField(el);
+            }
+
+            function applyCustomer(data) {
+                fillField('customerNameInput', data.name || '');
+                fillField('customerReferenceInput', data.reference || '');
+                fillField('customerPhoneInput', data.phone || '');
+
+                var filledCount = 0;
+                (data.garments || []).forEach(function(g) {
+                    if (!g.garment_code) return;
+                    g.points.forEach(function(p) {
+                        if (!p.code) return;
+                        var selector = 'input[name="' + g.garment_code + '[' + p.code + ']"]';
+                        var el = document.querySelector(selector);
+                        if (el) {
+                            el.value = p.value;
+                            flashField(el);
+                            filledCount++;
+                        }
+                    });
+                });
+
+                if (filledCount > 0) {
+                    showStatus('Loaded ' + (data.name || 'customer') +
+                        ' — name, reference & last measurements applied. You can still edit anything.', false);
+                } else {
+                    showStatus('Loaded ' + (data.name || 'customer') +
+                        ' — no previous measurements on file, so only name/reference were filled.', false);
+                }
+            }
+
+            function doLookup() {
+                var id = (input.value || '').trim();
+                if (!id) {
+                    status.hidden = true;
+                    return;
+                }
+
+                showStatus('Looking up customer #' + id + '…', false);
+
+                fetch('/customers/' + encodeURIComponent(id) + '/lookup', {
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    })
+                    .then(function(res) {
+                        return res.json();
+                    })
+                    .then(function(data) {
+                        if (data && data.found === true) {
+                            applyCustomer(data);
+                        } else {
+                            showStatus((data && data.message) || ('No customer found with number #' + id + '.'),
+                                true);
+                        }
+                    })
+                    .catch(function() {
+                        showStatus('Could not look up that customer. Please try again.', true);
+                    });
+            }
+
+            btn.addEventListener('click', doLookup);
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    doLookup();
+                }
+            });
+        })();
 
         function setView(v) {
             var m = document.getElementById('modern'),

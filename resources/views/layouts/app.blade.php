@@ -100,10 +100,14 @@
             </div>
             <button class="menu-btn" id="menuBtn" aria-label="Open menu">&#9776;</button>
             <nav id="nav">
-                <a href="{{ route('orders.search') }}" class="key">Search</a>
+                {{-- Routes --}}
+                <a href="{{ route('dashboard.index') }}"
+                    class="key {{ request()->routeIs('dashboard.index') ? 'is-active' : '' }}">Dashboard</a>
+                <a href="{{ route('orders.searchOrder') }}"
+                    class="key {{ request()->routeIs('orders.searchOrder') ? 'is-active' : '' }}">Find Order</a>
                 <a href="{{ route('orders.index') }}" class="key">New Order</a>
-                <a href="{{ route('dashboard.index') }}" class="key {{ request()->routeIs('dashboard.index') ? 'is-active' : '' }}">Dashboard</a>
-                <a href="{{ route('report.index') }}" class="key {{ request()->routeIs('report.index') ? 'is-active' : '' }}">Report</a>
+                <a href="{{ route('report.index') }}"
+                    class="key {{ request()->routeIs('report.index') ? 'is-active' : '' }}">Report</a>
                 <a href="#" onclick="window.print();return false;">Print</a>
             </nav>
         </div>
@@ -119,6 +123,9 @@
 
     {{-- ===== TOAST ===== --}}
     <div id="toast"><span id="toastMsg">Saved</span></div>
+
+    {{-- ===== FOOTER ===== --}}
+
 
     <script src="{{ asset('js/app.js') }}"></script>
     @stack('scripts')
