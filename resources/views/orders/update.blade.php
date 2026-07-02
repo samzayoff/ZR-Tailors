@@ -7,20 +7,20 @@
             <button id="btnModern" class="on" onclick="setView('modern')">Modern view</button>
             <button id="btnClassic" onclick="setView('classic')">Classic (old system)</button>
         </div>
-        <span class="hint"><b>Search Customer</b> — search by customer number, then view &amp; edit the exact
-            order you need. This page cannot create a new order.</span>
+        <span class="hint"><b>Update Order</b> — search by suit number or phone, then view &amp; edit the exact
+            order. This page cannot create a new order.</span>
     </div>
 
     <main>
 
-        {{-- Customer # search bar --}}
-        <form method="GET" action="{{ route('orders.searchOrder') }}" class="searchbar" id="customerSearch">
+        {{-- Search bar — by suit number or phone --}}
+        <form method="GET" action="{{ route('orders.updateOrder') }}" class="searchbar" id="search">
             <div class="field">
-                <label>Search by Customer #</label>
-                <input type="number" min="1" name="cn" placeholder="e.g. 1" value="{{ $cn ?? '' }}"
+                <label>Search by suit number or phone</label>
+                <input type="text" name="q" placeholder="6617 / 03100924747" value="{{ $searchQuery ?? '' }}"
                     autofocus>
             </div>
-            <button type="submit" class="btn btn-ghost">Find Customer</button>
+            <button type="submit" class="btn btn-ghost">Search</button>
         </form>
 
         {{-- Validation errors (e.g. after a failed update submit back here) --}}
@@ -39,247 +39,142 @@
             </div>
         @endif
 
-        {{-- ── Customer summary: name, order count, amounts, and a list of ── --}}
-        {{-- their orders — each with an Edit button that opens that exact ── --}}
-        {{-- order below for updating.                                     ── --}}
-        @if (($cn ?? '') !== '')
-            @if ($customerSummary && $customerSummary['found'])
-                @php
-                    $cs = $customerSummary;
-                    $c = $cs['customer'];
-                    $initials = collect(preg_split('/\s+/', trim($c->name)))
-                        ->filter()
-                        ->map(fn($w) => mb_strtoupper(mb_substr($w, 0, 1)))
-                        ->take(2)
-                        ->implode('');
-                @endphp
-
-                <div class="customer-profile-card">
-                    <div class="cp-avatar">{{ $initials ?: '—' }}</div>
-                    <div class="cp-info">
-                        <div class="cp-name-row">
-                            <span class="cp-name">{{ $c->name }}</span>
-                            <span class="cp-badge">Customer #{{ $c->id }}</span>
-                        </div>
-                        @if ($c->phone || $c->reference)
-                            <div class="cp-sub">
-                                @if ($c->phone)
-                                    <span class="num">{{ $c->phone }}</span>
-                                @endif
-                                @if ($c->phone && $c->reference)
-                                    <span class="dot">·</span>
-                                @endif
-                                @if ($c->reference)
-                                    <span>{{ $c->reference }}</span>
-                                @endif
-                            </div>
-                        @endif
-                    </div>
-                </div>
-
-                <div class="report-summary">
-                    <div class="rs-card">
-                        <span class="rs-k">Orders</span>
-                        <span class="rs-v num">{{ $cs['orders_count'] }}</span>
-                    </div>
-                    <div class="rs-card">
-                        <span class="rs-k">Total value</span>
-                        <span class="rs-v num">Rs {{ number_format($cs['total_price'], 0) }}</span>
-                    </div>
-                    <div class="rs-card">
-                        <span class="rs-k">Collected</span>
-                        <span class="rs-v num">Rs {{ number_format($cs['total_paid'], 0) }}</span>
-                    </div>
-                    <div class="rs-card">
-                        <span class="rs-k">Balance due</span>
-                        <span class="rs-v num">Rs {{ number_format($cs['total_remaining'], 0) }}</span>
-                    </div>
-                </div>
-
-                <div class="report-table-wrap" style="margin-bottom:20px;">
-                    <table class="report-table">
-                        <thead>
-                            <tr>
-                                <th>Suit #</th>
-                                <th>Booking</th>
-                                <th>Delivery</th>
-                                <th>Price</th>
-                                <th>Paid</th>
-                                <th>Balance</th>
-                                <th>Status</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse ($cs['orders'] as $o)
-                                @php $balance = max(0, $o->price - $o->advance_paid); @endphp
-                                <tr>
-                                    <td class="num">{{ $o->order_no }}</td>
-                                    <td class="num">{{ optional($o->booking_date)->format('d M Y') ?? '—' }}</td>
-                                    <td class="num">{{ optional($o->delivery_date)->format('d M Y') ?? '—' }}</td>
-                                    <td class="num">{{ number_format($o->price, 0) }}</td>
-                                    <td class="num">{{ number_format($o->advance_paid, 0) }}</td>
-                                    <td class="num">{{ number_format($balance, 0) }}</td>
-                                    <td><span
-                                            class="status-pill status-{{ $o->status }}">{{ ucfirst($o->status) }}</span>
-                                    </td>
-                                    <td>
-                                        <a href="{{ route('orders.searchOrder', ['q' => $o->order_no]) }}"
-                                            class="row-edit-btn">Edit</a>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="8" class="report-empty">This customer has no orders yet.</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            @else
-                <div class="customer-lookup-panel" style="margin-top:4px;margin-bottom:16px;">
-                    <div class="clp-empty">No customer found with number #{{ $customerSummary['cn'] ?? $cn }}.</div>
-                </div>
-            @endif
+        @if (!$order && ($searchQuery ?? '') !== '')
+            <div class="customer-lookup-panel" style="margin-top:4px; margin-bottom: 16px;">
+                <div class="clp-empty">No order found for "{{ $searchQuery }}". Check the suit number or phone and try again.</div>
+            </div>
+        @elseif (!$order)
+            <div class="customer-lookup-panel" style="margin-top:4px; margin-bottom: 16px;">
+                <div class="clp-empty">Enter a suit number or phone above to find an order to view and update.</div>
+            </div>
         @endif
 
-        @if (!$order)
-            @if (($cn ?? '') === '')
-                {{-- No order loaded: nothing searched yet --}}
-                <div class="customer-lookup-panel" style="margin-top:4px;">
-                    <div class="clp-empty">Enter a customer number above to see their orders, then hit Edit on the
-                        one you want to update.</div>
-                </div>
-            @endif
-        @else
-            {{-- ============ MODERN VIEW ============ --}}
-            <div id="modern">
+        {{-- ============ MODERN VIEW ============ --}}
+        <div id="modern">
 
-                {{-- ── Order form (UPDATE ONLY — never creates a new order) ── --}}
-                <form method="POST" action="{{ route('orders.update', $order->id) }}" id="orderForm">
-                    @method('PUT')
-                    @csrf
-                    <input type="hidden" name="return_to" value="lookup">
+            {{-- ── Order form (UPDATE ONLY — never creates a new order) ── --}}
+            <form method="POST" action="{{ $order ? route('orders.update', $order->id) : '#' }}" id="orderForm">
+                @method('PUT')
+                @csrf
+                <input type="hidden" name="return_to" value="updateOrder">
 
-                    <div class="sheet" id="c-order">
+                <div class="sheet" id="c-order">
 
-                        {{-- COL 1 — Customer --}}
-                        <div class="col">
-                            <div class="col-head">
-                                <svg class="ci">
-                                    <use href="#i-pen" />
-                                </svg>
-                                <span class="ce">Customer</span>
-                            </div>
-                            <div class="col-body">
-                                <div class="cf">
-                                    <label>Name</label>
-                                    <input class="txt @error('name') is-invalid @enderror" type="text" name="name"
-                                        value="{{ old('name', $order->customer?->name) }}" placeholder="Customer name"
-                                        required>
-                                </div>
-                                <div class="cf">
-                                    <label>S/O · Reference</label>
-                                    <input class="txt" type="text" name="reference"
-                                        value="{{ old('reference', $order->customer?->reference) }}" placeholder="—">
-                                </div>
-                                <div class="cf">
-                                    <label>Phone</label>
-                                    <input type="text" name="phone"
-                                        value="{{ old('phone', $order->customer?->phone) }}" placeholder="03XXXXXXXXX">
-                                </div>
-                                <div class="cf">
-                                    <label>Suit / Order No</label>
-                                    <input type="hidden" name="order_no" value="{{ $order->order_no }}">
-                                    <input type="text" value="{{ $order->order_no }}" readonly
-                                        style="background:#f5f5f0;cursor:not-allowed;opacity:0.8;">
-                                </div>
-                                <div class="cf">
-                                    <label>Booking Date</label>
-                                    <input class="@error('booking_date') is-invalid @enderror" type="date"
-                                        name="booking_date"
-                                        value="{{ old('booking_date', $order->booking_date?->format('Y-m-d')) }}"
-                                        required>
-                                </div>
-                                <div class="cf">
-                                    <label>Delivery Date</label>
-                                    <input class="@error('delivery_date') is-invalid @enderror" type="date"
-                                        name="delivery_date"
-                                        value="{{ old('delivery_date', $order->delivery_date?->format('Y-m-d')) }}"
-                                        required>
-                                </div>
-                                <div class="cf">
-                                    <label>Quantity</label>
-                                    <input class="@error('quantity') is-invalid @enderror" type="number" name="quantity"
-                                        min="1" max="99"
-                                        value="{{ old('quantity', $order->quantity ?? 1) }}" required>
-                                </div>
-                                <div class="cf">
-                                    <label>Price (Rs.)</label>
-                                    <input class="@error('price') is-invalid @enderror" type="text" name="price"
-                                        id="priceInput"
-                                        value="{{ old('price', $order->price > 0 ? $order->price : '') }}"
-                                        placeholder="0" oninput="calcRemaining()" required>
-                                </div>
-                                <div class="cf">
-                                    <label>Paid (Rs.)</label>
-                                    <input class="@error('advance_paid') is-invalid @enderror" type="text"
-                                        name="advance_paid" id="advanceInput"
-                                        value="{{ old('advance_paid', $order->advance_paid ?? '0') }}" placeholder="0"
-                                        oninput="calcRemaining()">
-                                </div>
-
-                                <div class="cf">
-                                    <label>Status</label>
-                                    <select name="status" class="status-select" id="statusSelect"
-                                        onchange="updateStatusBadge(this)">
-                                        @php
-                                            $currentStatus = old('status', $order->status ?? 'pending');
-                                            $statuses = [
-                                                'pending' => 'Pending',
-                                                'stitching' => 'Stitching',
-                                                'ready' => 'Ready',
-                                                'delivered' => 'Delivered',
-                                                'returned' => 'Returned',
-                                                'cancelled' => 'Cancelled',
-                                            ];
-                                        @endphp
-                                        @foreach ($statuses as $val => $label)
-                                            <option value="{{ $val }}"
-                                                {{ $currentStatus === $val ? 'selected' : '' }}>
-                                                {{ $label }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-
-                                <div class="order-summary">
-                                    <div class="summary-row">
-                                        <span class="summary-k">Booked</span>
-                                        <span class="summary-v" id="summBooking">
-                                            {{ $order->booking_date?->format('d M Y') ?? '—' }}
-                                        </span>
-                                    </div>
-                                    <div class="summary-row">
-                                        <span class="summary-k">Due</span>
-                                        <span class="summary-v due-date" id="summDelivery">
-                                            {{ $order->delivery_date?->format('d M Y') ?? '—' }}
-                                        </span>
-                                    </div>
-                                    <div class="summary-row">
-                                        <span class="summary-k">Status</span>
-                                        <span class="summary-v" id="summStatus">
-                                            <span
-                                                class="status-pill status-{{ $currentStatus }}">{{ $statuses[$currentStatus] }}</span>
-                                        </span>
-                                    </div>
-                                    <div class="summary-row remaining-row">
-                                        <span class="summary-k">Remaining</span>
-                                        <span class="summary-v remaining-amt" id="summRemaining">—</span>
-                                    </div>
-                                </div>
-
-                            </div>
+                    {{-- COL 1 — Customer --}}
+                    <div class="col">
+                        <div class="col-head">
+                            <svg class="ci">
+                                <use href="#i-pen" />
+                            </svg>
+                            <span class="ce">Customer</span>
                         </div>
+                        <div class="col-body">
+                            <div class="cf">
+                                <label>Name</label>
+                                <input class="txt @error('name') is-invalid @enderror" type="text" name="name"
+                                    value="{{ old('name', $order?->customer?->name) }}" placeholder="Customer name"
+                                    required>
+                            </div>
+                            <div class="cf">
+                                <label>S/O · Reference</label>
+                                <input class="txt" type="text" name="reference"
+                                    value="{{ old('reference', $order?->customer?->reference) }}" placeholder="—">
+                            </div>
+                            <div class="cf">
+                                <label>Phone</label>
+                                <input type="text" name="phone"
+                                    value="{{ old('phone', $order?->customer?->phone) }}" placeholder="03XXXXXXXXX">
+                            </div>
+                            <div class="cf">
+                                <label>Suit / Order No</label>
+                                <input type="hidden" name="order_no" value="{{ $order?->order_no }}">
+                                <input type="text" value="{{ $order?->order_no }}" readonly
+                                    style="background:#f5f5f0;cursor:not-allowed;opacity:0.8;">
+                            </div>
+                            <div class="cf">
+                                <label>Booking Date</label>
+                                <input class="@error('booking_date') is-invalid @enderror" type="date"
+                                    name="booking_date"
+                                    value="{{ old('booking_date', $order?->booking_date?->format('Y-m-d') ?? now()->format('Y-m-d')) }}" required>
+                            </div>
+                            <div class="cf">
+                                <label>Delivery Date</label>
+                                <input class="@error('delivery_date') is-invalid @enderror" type="date"
+                                    name="delivery_date"
+                                    value="{{ old('delivery_date', $order?->delivery_date?->format('Y-m-d')) }}"
+                                    required>
+                            </div>
+                            <div class="cf">
+                                <label>Quantity</label>
+                                <input class="@error('quantity') is-invalid @enderror" type="number" name="quantity"
+                                    min="1" max="99" value="{{ old('quantity', $order?->quantity ?? 1) }}"
+                                    required>
+                            </div>
+                            <div class="cf">
+                                <label>Price (Rs.)</label>
+                                <input class="@error('price') is-invalid @enderror" type="text" name="price"
+                                    id="priceInput" value="{{ old('price', ($order && $order->price > 0) ? $order->price : '') }}"
+                                    placeholder="0" oninput="calcRemaining()" required>
+                            </div>
+                            <div class="cf">
+                                <label>Paid (Rs.)</label>
+                                <input class="@error('advance_paid') is-invalid @enderror" type="text"
+                                    name="advance_paid" id="advanceInput"
+                                    value="{{ old('advance_paid', $order?->advance_paid ?? '0') }}" placeholder="0"
+                                    oninput="calcRemaining()">
+                            </div>
+
+                            <div class="cf">
+                                <label>Status</label>
+                                <select name="status" class="status-select" id="statusSelect"
+                                    onchange="updateStatusBadge(this)">
+                                    @php
+                                        $currentStatus = old('status', $order?->status ?? 'pending');
+                                        $statuses = [
+                                            'pending' => 'Pending',
+                                            'stitching' => 'Stitching',
+                                            'ready' => 'Ready',
+                                            'delivered' => 'Delivered',
+                                            'returned' => 'Returned',
+                                            'cancelled' => 'Cancelled',
+                                        ];
+                                    @endphp
+                                    @foreach ($statuses as $val => $label)
+                                        <option value="{{ $val }}"
+                                            {{ $currentStatus === $val ? 'selected' : '' }}>
+                                            {{ $label }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="order-summary">
+                                <div class="summary-row">
+                                    <span class="summary-k">Booked</span>
+                                    <span class="summary-v" id="summBooking">
+                                        {{ $order?->booking_date?->format('d M Y') ?? '—' }}
+                                    </span>
+                                </div>
+                                <div class="summary-row">
+                                    <span class="summary-k">Due</span>
+                                    <span class="summary-v due-date" id="summDelivery">
+                                        {{ $order?->delivery_date?->format('d M Y') ?? '—' }}
+                                    </span>
+                                </div>
+                                <div class="summary-row">
+                                    <span class="summary-k">Status</span>
+                                    <span class="summary-v" id="summStatus">
+                                        <span
+                                            class="status-pill status-{{ $currentStatus }}">{{ $statuses[$currentStatus] }}</span>
+                                    </span>
+                                </div>
+                                <div class="summary-row remaining-row">
+                                    <span class="summary-k">Remaining</span>
+                                    <span class="summary-v remaining-amt" id="summRemaining">—</span>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
 
                         {{-- COL 2 — Kameez --}}
                         <div class="col" id="c-suit">
@@ -392,7 +287,7 @@
                                 <div class="scolor">
                                     <label>Write for colour</label>
                                     <input type="text" name="colour_note"
-                                        value="{{ old('colour_note', $order->colour_note) }}"
+                                        value="{{ old('colour_note', $order?->colour_note) }}"
                                         placeholder="Colour / fabric">
                                 </div>
 
@@ -419,7 +314,7 @@
                                     <span>Design sketch area</span>
                                 </div>
 
-                                <textarea name="extra_notes" placeholder="Extra design notes…">{{ old('extra_notes', $order->extra_notes) }}</textarea>
+                                <textarea name="extra_notes" placeholder="Extra design notes…">{{ old('extra_notes', $order?->extra_notes) }}</textarea>
 
                                 <div class="btn-toggles">
                                     @foreach ($designOptions->get('button', collect()) as $opt)
@@ -440,11 +335,15 @@
 
                     {{-- Action bar — view & update only, no "save as new" path exists here --}}
                     <div class="actions">
-                        <button type="button" class="btn btn-danger mr" onclick="confirmDelete({{ $order->id }})">
-                            Delete</button>
-                        <a href="{{ route('orders.print', $order->id) }}" target="_blank"
-                            class="btn btn-ghost">Print</a>
-                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                        @if ($order)
+                            <button type="button" class="btn btn-danger mr" onclick="confirmDelete({{ $order->id }})">Delete</button>
+                            <a href="{{ route('orders.print', $order->id) }}" target="_blank" class="btn btn-ghost">Print</a>
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        @else
+                            <button type="button" class="btn btn-danger mr" disabled style="opacity: 0.5; cursor: not-allowed;">Delete</button>
+                            <button type="button" class="btn btn-ghost" disabled style="opacity: 0.5; cursor: not-allowed;">Print</button>
+                            <button type="button" class="btn btn-primary" disabled style="opacity: 0.5; cursor: not-allowed;">Save Changes</button>
+                        @endif
                     </div>
 
                 </form>
@@ -455,38 +354,39 @@
             <div class="classic" id="classic">
 
                 <div class="classic-actions">
-                    <button type="button" class="cls-btn cls-edit" id="clsEditBtn" onclick="classicEdit()">✏
-                        Edit</button>
-                    <button type="button" class="cls-btn cls-save" id="clsSaveBtn" onclick="classicSave()"
-                        style="display:none">💾 Save</button>
-                    <button type="button" class="cls-btn cls-cancel" id="clsCancelBtn" onclick="classicCancel()"
-                        style="display:none">✕ Cancel</button>
-                    <a href="{{ route('orders.print', $order->id) }}" target="_blank" class="cls-btn cls-print">🖨
-                        Print</a>
-                    <button type="button" class="cls-btn cls-delete" onclick="confirmDelete({{ $order->id }})">🗑
-                        Delete</button>
+                    @if ($order)
+                        <button type="button" class="cls-btn cls-edit" id="clsEditBtn" onclick="classicEdit()">✏ Edit</button>
+                        <button type="button" class="cls-btn cls-save" id="clsSaveBtn" onclick="classicSave()" style="display:none">💾 Save</button>
+                        <button type="button" class="cls-btn cls-cancel" id="clsCancelBtn" onclick="classicCancel()" style="display:none">✕ Cancel</button>
+                        <a href="{{ route('orders.print', $order->id) }}" target="_blank" class="cls-btn cls-print">🖨 Print</a>
+                        <button type="button" class="cls-btn cls-delete" onclick="confirmDelete({{ $order->id }})">🗑 Delete</button>
+                    @else
+                        <button type="button" class="cls-btn cls-edit" disabled style="opacity:0.5;cursor:not-allowed;">✏ Edit</button>
+                        <button type="button" class="cls-btn cls-print" disabled style="opacity:0.5;pointer-events:none;">🖨 Print</button>
+                        <button type="button" class="cls-btn cls-delete" disabled style="opacity:0.5;cursor:not-allowed;">🗑 Delete</button>
+                    @endif
                 </div>
 
                 {{-- Hidden update form for classic edit --}}
-                <form id="classicForm" method="POST" action="{{ route('orders.update', $order->id) }}"
+                <form id="classicForm" method="POST" action="{{ $order ? route('orders.update', $order->id) : '#' }}"
                     style="display:none">
                     @csrf
                     @method('PUT')
-                    <input type="hidden" name="return_to" value="lookup">
-                    <input type="hidden" name="name" id="cf_name" value="{{ $order->customer->name }}">
-                    <input type="hidden" name="reference" id="cf_reference" value="{{ $order->customer->reference }}">
-                    <input type="hidden" name="phone" id="cf_phone" value="{{ $order->customer->phone }}">
-                    <input type="hidden" name="order_no" id="cf_order_no" value="{{ $order->order_no }}">
+                    <input type="hidden" name="return_to" value="updateOrder">
+                    <input type="hidden" name="name" id="cf_name" value="{{ $order?->customer?->name }}">
+                    <input type="hidden" name="reference" id="cf_reference" value="{{ $order?->customer?->reference }}">
+                    <input type="hidden" name="phone" id="cf_phone" value="{{ $order?->customer?->phone }}">
+                    <input type="hidden" name="order_no" id="cf_order_no" value="{{ $order?->order_no }}">
                     <input type="hidden" name="booking_date" id="cf_booking_date"
-                        value="{{ $order->booking_date?->format('Y-m-d') }}">
+                        value="{{ $order?->booking_date?->format('Y-m-d') }}">
                     <input type="hidden" name="delivery_date" id="cf_delivery_date"
-                        value="{{ $order->delivery_date?->format('Y-m-d') }}">
-                    <input type="hidden" name="quantity" id="cf_quantity" value="{{ $order->quantity }}">
-                    <input type="hidden" name="price" id="cf_price" value="{{ $order->price }}">
-                    <input type="hidden" name="advance_paid" id="cf_advance" value="{{ $order->advance_paid }}">
-                    <input type="hidden" name="status" id="cf_status" value="{{ $order->status }}">
-                    <input type="hidden" name="colour_note" id="cf_colour" value="{{ $order->colour_note }}">
-                    <input type="hidden" name="extra_notes" id="cf_notes" value="{{ $order->extra_notes }}">
+                        value="{{ $order?->delivery_date?->format('Y-m-d') }}">
+                    <input type="hidden" name="quantity" id="cf_quantity" value="{{ $order?->quantity }}">
+                    <input type="hidden" name="price" id="cf_price" value="{{ $order?->price }}">
+                    <input type="hidden" name="advance_paid" id="cf_advance" value="{{ $order?->advance_paid }}">
+                    <input type="hidden" name="status" id="cf_status" value="{{ $order?->status }}">
+                    <input type="hidden" name="colour_note" id="cf_colour" value="{{ $order?->colour_note }}">
+                    <input type="hidden" name="extra_notes" id="cf_notes" value="{{ $order?->extra_notes }}">
                     @foreach ($selectedOptionIds as $oid)
                         <input type="hidden" name="design_options[]" value="{{ $oid }}">
                     @endforeach
@@ -504,56 +404,56 @@
                         {{-- VIEW mode --}}
                         <div class="cls-view">
                             <div class="row"><span class="k">Name</span> <span class="v"
-                                    id="vw_name">{{ $order->customer?->name ?? '—' }}</span></div>
+                                    id="vw_name">{{ $order?->customer?->name ?? '—' }}</span></div>
                             <div class="row"><span class="k">S/O</span> <span class="v"
-                                    id="vw_ref">{{ $order->customer?->reference ?? '—' }}</span></div>
+                                    id="vw_ref">{{ $order?->customer?->reference ?? '—' }}</span></div>
                             <div class="row"><span class="k">Phone</span> <span class="v"
-                                    id="vw_phone">{{ $order->customer?->phone ?? '—' }}</span></div>
+                                    id="vw_phone">{{ $order?->customer?->phone ?? '—' }}</span></div>
                             <div class="row"><span class="k">Suit No</span> <span class="v"
-                                    id="vw_order_no">{{ $order->order_no }}</span></div>
+                                    id="vw_order_no">{{ $order?->order_no ?? '—' }}</span></div>
                             <div class="row"><span class="k">Booking</span> <span class="v"
-                                    id="vw_booking">{{ $order->booking_date?->format('d/m/Y') ?? '—' }}</span></div>
+                                    id="vw_booking">{{ $order?->booking_date?->format('d/m/Y') ?? '—' }}</span></div>
                             <div class="row"><span class="k">Delivery</span><span class="v"
-                                    id="vw_delivery">{{ $order->delivery_date?->format('d/m/Y') ?? '—' }}</span></div>
+                                    id="vw_delivery">{{ $order?->delivery_date?->format('d/m/Y') ?? '—' }}</span></div>
                             <div class="row"><span class="k">Price</span> <span class="v"
-                                    id="vw_price">{{ $order->price > 0 ? 'Rs. ' . number_format($order->price, 0) : '—' }}</span>
+                                    id="vw_price">{{ ($order && $order->price > 0) ? 'Rs. ' . number_format($order->price, 0) : '—' }}</span>
                             </div>
                             <div class="row"><span class="k">Paid</span> <span class="v"
-                                    id="vw_advance">{{ $order->advance_paid > 0 ? 'Rs. ' . number_format($order->advance_paid, 0) : '—' }}</span>
+                                    id="vw_advance">{{ ($order && $order->advance_paid > 0) ? 'Rs. ' . number_format($order->advance_paid, 0) : '—' }}</span>
                             </div>
                             <div class="row"><span class="k">Status</span> <span class="v"
-                                    id="vw_status">{{ ucfirst($order->status ?? '—') }}</span></div>
+                                    id="vw_status">{{ ucfirst($order?->status ?? '—') }}</span></div>
                         </div>
 
                         {{-- EDIT mode (hidden by default) --}}
                         <div class="cls-edit-fields" style="display:none">
                             <div class="row"><span class="k">Name</span> <input
                                     class="cls-input @error('name') is-invalid @enderror" id="ei_name"
-                                    value="{{ $order->customer?->name }}"></div>
+                                    value="{{ $order?->customer?->name }}"></div>
                             <div class="row"><span class="k">S/O</span> <input class="cls-input" id="ei_ref"
-                                    value="{{ $order->customer?->reference }}"></div>
+                                    value="{{ $order?->customer?->reference }}"></div>
                             <div class="row"><span class="k">Phone</span> <input class="cls-input"
-                                    id="ei_phone" value="{{ $order->customer?->phone }}"></div>
+                                    id="ei_phone" value="{{ $order?->customer?->phone }}"></div>
                             <div class="row"><span class="k">Suit No</span> <input
                                     class="cls-input @error('order_no') is-invalid @enderror" id="ei_order_no"
-                                    value="{{ $order->order_no }}"></div>
+                                    value="{{ $order?->order_no }}"></div>
                             <div class="row"><span class="k">Booking</span> <input
                                     class="cls-input @error('booking_date') is-invalid @enderror" type="date"
-                                    id="ei_booking" value="{{ $order->booking_date?->format('Y-m-d') }}"></div>
+                                    id="ei_booking" value="{{ $order?->booking_date?->format('Y-m-d') }}"></div>
                             <div class="row"><span class="k">Delivery</span><input
                                     class="cls-input @error('delivery_date') is-invalid @enderror" type="date"
-                                    id="ei_delivery" value="{{ $order->delivery_date?->format('Y-m-d') }}"></div>
+                                    id="ei_delivery" value="{{ $order?->delivery_date?->format('Y-m-d') }}"></div>
                             <div class="row"><span class="k">Price</span> <input
                                     class="cls-input @error('price') is-invalid @enderror" id="ei_price"
-                                    value="{{ $order->price }}"></div>
+                                    value="{{ $order?->price }}"></div>
                             <div class="row"><span class="k">Paid</span> <input
                                     class="cls-input @error('advance_paid') is-invalid @enderror" id="ei_advance"
-                                    value="{{ $order->advance_paid }}"></div>
+                                    value="{{ $order?->advance_paid }}"></div>
                             <div class="row"><span class="k">Status</span>
                                 <select class="cls-input cls-select" id="ei_status">
                                     @foreach (['pending' => 'Pending', 'stitching' => 'Stitching', 'ready' => 'Ready', 'delivered' => 'Delivered', 'returned' => 'Returned', 'cancelled' => 'Cancelled'] as $v => $l)
                                         <option value="{{ $v }}"
-                                            {{ $order->status === $v ? 'selected' : '' }}>
+                                            {{ ($order && $order->status === $v) ? 'selected' : '' }}>
                                             {{ $l }}</option>
                                     @endforeach
                                 </select>
@@ -635,12 +535,11 @@
             </div>{{-- /classic --}}
 
             {{-- Delete form (hidden, triggered by JS) --}}
-            <form id="deleteForm" method="POST" action="{{ route('orders.destroy', $order->id) }}"
+            <form id="deleteForm" method="POST" action="{{ $order ? route('orders.destroy', $order->id) : '#' }}"
                 style="display:none">
                 @csrf
                 @method('DELETE')
             </form>
-        @endif
 
     </main>
 

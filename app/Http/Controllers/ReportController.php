@@ -46,6 +46,13 @@ class ReportController
         // ── Search by suit #, customer name, or phone ────────────────────
         $search = trim((string) $request->input('q', ''));
 
+        // ── Sort ─────────────────────────────────────────────────────────
+        $allowedSorts = ['order_no', 'customer_id', 'booking_date', 'balance'];
+        $sortBy  = $request->input('sort_by', 'booking_date');
+        $sortDir = $request->input('sort_dir', 'desc');
+        if (! in_array($sortBy,  $allowedSorts,      true)) { $sortBy  = 'booking_date'; }
+        if (! in_array($sortDir, ['asc', 'desc'],    true)) { $sortDir = 'desc'; }
+
         // ── Build query ───────────────────────────────────────────────
         $query = Order::with('customer');
 
@@ -54,7 +61,8 @@ class ReportController
                 $q->where('order_no', 'like', "%{$search}%")
                   ->orWhereHas('customer', function ($qc) use ($search) {
                       $qc->where('name', 'like', "%{$search}%")
-                         ->orWhere('phone', 'like', "%{$search}%");
+                         ->orWhere('phone', 'like', "%{$search}%")
+                         ->orWhere('id', 'like', "%{$search}%");
                   });
             });
         } else {
@@ -81,7 +89,23 @@ class ReportController
             });
         }
 
-        $orders = $query->orderByDesc('booking_date')->get();
+        // Apply sort
+        if ($sortBy === 'order_no') {
+            $query->orderByRaw('CAST(order_no AS UNSIGNED) ' . $sortDir);
+        } elseif ($sortBy === 'customer_id') {
+            $query->orderBy('customer_id', $sortDir);
+        } elseif ($sortBy === 'booking_date') {
+            $query->orderBy('booking_date', $sortDir);
+        }
+
+        $orders = $query->get();
+
+        // For balance sort, re-sort in memory
+        if ($sortBy === 'balance') {
+            $orders = $sortDir === 'asc'
+                ? $orders->sortBy(fn ($o) => max(0, floatval($o->price) - floatval($o->advance_paid)))
+                : $orders->sortByDesc(fn ($o) => max(0, floatval($o->price) - floatval($o->advance_paid)));
+        }
 
         // ── Summary numbers ──────────────────────────────────────────────
         $summary = [
@@ -102,6 +126,8 @@ class ReportController
             'statuses'         => self::STATUSES,
             'paymentStatuses'  => self::PAYMENT_STATUSES,
             'search'           => $search,
+            'sortBy'           => $sortBy,
+            'sortDir'          => $sortDir,
         ]);
     }
 

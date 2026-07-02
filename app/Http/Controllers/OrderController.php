@@ -27,35 +27,15 @@ class OrderController
         return view('orders.form', $this->viewData());
     }
 
-    
-    public function search(Request $request): View
-    {
-        $q = trim($request->input('q', ''));
-
-        $order = null;
-        if ($q !== '') {
-            $order = Order::with([
-                'customer',
-                'garments.garmentType',
-                'garments.measurements.measurementPoint',
-                'designOptions',
-            ])
-            ->where('order_no', $q)
-            ->orWhereHas('customer', fn ($qb) => $qb->where('phone', $q))
-            ->latest()
-            ->first();
-        }
-
-        return view('orders.form', $this->viewData($order, $q));
-    }
-
-    // ── search-only page
+    // ── search-only page: view & update an existing order, never create a new one
     public function searchOrder(Request $request): View
     {
         $q  = trim($request->input('q', ''));
         $cn = trim($request->input('cn', ''));
 
-        // Customer-number search
+        // Customer-number search: pull the customer + a summary of ALL their
+        // orders (counts, amounts) so staff can see everything at a glance
+        // before choosing which specific order to edit.
         $customerSummary = null;
         if ($cn !== '') {
             $customer = ctype_digit($cn) ? Customer::find((int) $cn) : null;
@@ -100,6 +80,29 @@ class OrderController
         ));
     }
 
+    // ── update-only page: search by SUIT NUMBER (or phone) to view & update
+    // an existing order directly — never creates a new one.
+    public function updateOrder(Request $request): View
+    {
+        $q = trim($request->input('q', ''));
+
+        $order = null;
+        if ($q !== '') {
+            $order = Order::with([
+                'customer',
+                'garments.garmentType',
+                'garments.measurements.measurementPoint',
+                'designOptions',
+            ])
+            ->where('order_no', $q)
+            ->orWhereHas('customer', fn ($qb) => $qb->where('phone', $q))
+            ->latest()
+            ->first();
+        }
+
+        return view('orders.update', $this->viewData($order, $q));
+    }
+
     // store new order
     public function store(StoreOrderRequest $request): RedirectResponse
     {
@@ -112,7 +115,7 @@ class OrderController
             $this->recordPaymentDelta($order, 0, (float) $order->advance_paid);
         });
 
-        return redirect()->route('orders.search', ['q' => $order->order_no])
+        return redirect()->route('orders.searchOrder', ['q' => $order->order_no])
             ->with('success', 'Order saved successfully.');
     }
 
@@ -140,15 +143,14 @@ class OrderController
             $this->recordPaymentDelta($order, $previousAdvance, (float) $order->advance_paid);
         });
 
-        // If this update was submitted from the dedicated "search & update"
-        // page, send the user back there instead of the combined page —
-        // keeps that flow completely separate from new-order creation.
-        if ($request->input('return_to') === 'lookup') {
-            return redirect()->route('orders.searchOrder', ['q' => $order->order_no])
+        // Return to whichever update-only page this save was submitted
+        // from — Search Customer or Update Order — never to New Order.
+        if ($request->input('return_to') === 'updateOrder') {
+            return redirect()->route('orders.updateOrder', ['q' => $order->order_no])
                 ->with('success', 'Order updated successfully.');
         }
 
-        return redirect()->route('orders.search', ['q' => $order->order_no])
+        return redirect()->route('orders.searchOrder', ['q' => $order->order_no])
             ->with('success', 'Order updated successfully.');
     }
 

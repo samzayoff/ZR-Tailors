@@ -17,16 +17,6 @@
         {{-- ============ MODERN VIEW ============ --}}
         <div id="modern">
 
-            {{-- Search bar --}}
-            <form method="GET" action="{{ route('orders.search') }}" class="searchbar" id="search">
-                <div class="field">
-                    <label>Search by suit number or phone</label>
-                    <input type="text" name="q" placeholder="6617 / 03100924747" value="{{ $searchQuery ?? '' }}">
-                </div>
-                <button type="submit" class="btn btn-ghost">Search</button>
-                <a href="{{ route('orders.index') }}" class="btn btn-brass">+ New Order</a>
-            </form>
-
             {{-- Validation errors --}}
             @if ($errors->any())
                 <style>
@@ -43,324 +33,326 @@
                 </div>
             @endif
 
-            {{-- ── Order form ── --}}
-            @if ($order)
-                <form method="POST" action="{{ route('orders.update', $order->id) }}" id="orderForm">
-                    @method('PUT')
-                @else
-                    <form method="POST" action="{{ route('orders.store') }}" id="orderForm">
-            @endif
-            @csrf
+            {{-- ── Order form — always creates a NEW order. Updating an ── --}}
+            {{-- existing order only happens on the separate Update System page. ── --}}
+            <form method="POST" action="{{ route('orders.store') }}" id="orderForm">
+                @csrf
 
-            <div class="sheet" id="c-order">
+                <div class="sheet" id="c-order">
 
-                {{-- COL 1 — Customer --}}
-                <div class="col">
-                    <div class="col-head">
-                        <svg class="ci">
-                            <use href="#i-pen" />
-                        </svg>
-                        <span class="ce">Customer</span>
-                    </div>
-                    <div class="col-body">
-                        <div class="cf">
-                            <label>Customer # <span style="font-weight:400;text-transform:none;color:var(--muted);">(load an
-                                    existing customer's details &amp; last measurements)</span></label>
-                            <div style="display:flex;gap:8px;">
-                                <input class="txt" type="number" min="1" id="customerLookupNo"
-                                    placeholder="e.g. 1" style="flex:1;">
-                                <button type="button" class="btn btn-ghost" id="customerLookupBtn"
-                                    style="flex:0 0 auto;padding:0 14px;">Find</button>
+                    {{-- COL 1 — Customer --}}
+                    <div class="col">
+                        <div class="col-head">
+                            <svg class="ci">
+                                <use href="#i-pen" />
+                            </svg>
+                            <span class="ce">Customer</span>
+                        </div>
+                        <div class="col-body">
+                            <div class="cf">
+                                <label>Customer # <span
+                                        style="font-weight:400;text-transform:none;color:var(--muted);">(load an existing
+                                        customer's details &amp; last measurements)</span></label>
+                                <div style="display:flex;gap:8px;">
+                                    <input class="txt" type="number" min="1" id="customerLookupNo"
+                                        placeholder="e.g. 1" style="flex:1;">
+                                    <button type="button" class="btn btn-ghost" id="customerLookupBtn"
+                                        style="flex:0 0 auto;padding:0 14px;">Find</button>
+                                </div>
+                                <div id="customerLookupResult" class="lookup-status" hidden></div>
                             </div>
-                            <div id="customerLookupResult" class="lookup-status" hidden></div>
-                        </div>
-                        <div class="cf">
-                            <label>Name</label>
-                            <input class="txt @error('name') is-invalid @enderror" type="text" name="name"
-                                id="customerNameInput" value="{{ old('name', $order?->customer?->name) }}"
-                                placeholder="Customer name" required>
-                        </div>
-                        <div class="cf">
-                            <label>S/O · Reference</label>
-                            <input class="txt" type="text" name="reference" id="customerReferenceInput"
-                                value="{{ old('reference', $order?->customer?->reference) }}" placeholder="—">
-                        </div>
-                        <div class="cf">
-                            <label>Phone</label>
-                            <input type="text" name="phone" id="customerPhoneInput"
-                                value="{{ old('phone', $order?->customer?->phone) }}" placeholder="03XXXXXXXXX">
-                        </div>
-                        <div class="cf">
-                            <label>Suit / Order No</label>
-                            @php $displayOrderNo = $order?->order_no ?? $nextOrderNo; @endphp
-                            <input type="hidden" name="order_no" value="{{ $displayOrderNo }}">
-                            <input type="text" value="{{ $displayOrderNo }}" readonly
-                                style="background:#f5f5f0;cursor:not-allowed;opacity:0.8;">
-                        </div>
-                        <div class="cf">
-                            <label>Booking Date</label>
-                            @if ($order)
-                                <input class="@error('booking_date') is-invalid @enderror" type="date"
-                                    name="booking_date"
-                                    value="{{ old('booking_date', $order->booking_date?->format('Y-m-d')) }}"
-                                    placeholder="dd/mm/yyyy" required>
-                            @else
-                                <input type="hidden" name="booking_date"
-                                    value="{{ old('booking_date', now()->format('Y-m-d')) }}">
-                                <input type="text" value="{{ now()->format('d M Y') }}" readonly
+                            <div class="cf">
+                                <label>Name</label>
+                                <input class="txt @error('name') is-invalid @enderror" type="text" name="name"
+                                    id="customerNameInput" value="{{ old('name', $order?->customer?->name) }}"
+                                    placeholder="Customer name" required>
+                            </div>
+                            <div class="cf">
+                                <label>S/O · Reference</label>
+                                <input class="txt" type="text" name="reference" id="customerReferenceInput"
+                                    value="{{ old('reference', $order?->customer?->reference) }}" placeholder="—">
+                            </div>
+                            <div class="cf">
+                                <label>Phone</label>
+                                <input type="text" name="phone" id="customerPhoneInput"
+                                    value="{{ old('phone', $order?->customer?->phone) }}" placeholder="03XXXXXXXXX">
+                            </div>
+                            <div class="cf">
+                                <label>Suit / Order No</label>
+                                @php $displayOrderNo = $order?->order_no ?? $nextOrderNo; @endphp
+                                <input type="hidden" name="order_no" value="{{ $displayOrderNo }}">
+                                <input type="text" value="{{ $displayOrderNo }}" readonly
                                     style="background:#f5f5f0;cursor:not-allowed;opacity:0.8;">
-                            @endif
-                        </div>
-                        <div class="cf">
-                            <label>Delivery Date</label>
-                            <input class="@error('delivery_date') is-invalid @enderror" type="date" name="delivery_date"
-                                value="{{ old('delivery_date', $order?->delivery_date?->format('Y-m-d')) }}"
-                                placeholder="dd/mm/yyyy" required>
-                        </div>
-                        <div class="cf">
-                            <label>Quantity</label>
-                            <input class="@error('quantity') is-invalid @enderror" type="number" name="quantity"
-                                min="1" max="99" value="{{ old('quantity', $order?->quantity ?? 1) }}"
-                                required>
-                        </div>
-                        <div class="cf">
-                            <label>Price (Rs.)</label>
-                            <input class="@error('price') is-invalid @enderror" type="text" name="price"
-                                id="priceInput" value="{{ old('price', $order?->price > 0 ? $order->price : '') }}"
-                                placeholder="0" oninput="calcRemaining()" required>
-                        </div>
-                        <div class="cf">
-                            <label>Paid (Rs.)</label>
-                            <input class="@error('advance_paid') is-invalid @enderror" type="text" name="advance_paid"
-                                id="advanceInput" value="{{ old('advance_paid', $order?->advance_paid ?? '0') }}"
-                                placeholder="0" oninput="calcRemaining()">
-                        </div>
-
-                        {{-- Status dropdown --}}
-                        <div class="cf">
-                            <label>Status</label>
-                            <select name="status" class="status-select" id="statusSelect"
-                                onchange="updateStatusBadge(this)">
-                                @php
-                                    $currentStatus = old('status', $order?->status ?? 'pending');
-                                    $statuses = [
-                                        'pending' => 'Pending',
-                                        'stitching' => 'Stitching',
-                                        'ready' => 'Ready',
-                                        'delivered' => 'Delivered',
-                                        'returned' => 'Returned',
-                                        'cancelled' => 'Cancelled',
-                                    ];
-                                @endphp
-                                @foreach ($statuses as $val => $label)
-                                    <option value="{{ $val }}" {{ $currentStatus === $val ? 'selected' : '' }}>
-                                        {{ $label }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        {{-- Summary footer --}}
-                        <div class="order-summary">
-                            <div class="summary-row">
-                                <span class="summary-k">Booked</span>
-                                <span class="summary-v" id="summBooking">
-                                    {{ $order?->booking_date?->format('d M Y') ?? now()->format('d M Y') }}
-                                </span>
                             </div>
-                            <div class="summary-row">
-                                <span class="summary-k">Due</span>
-                                <span class="summary-v due-date" id="summDelivery">
-                                    {{ $order?->delivery_date?->format('d M Y') ?? '—' }}
-                                </span>
+                            <div class="cf">
+                                <label>Booking Date</label>
+                                @if ($order)
+                                    <input class="@error('booking_date') is-invalid @enderror" type="date"
+                                        name="booking_date"
+                                        value="{{ old('booking_date', $order->booking_date?->format('Y-m-d')) }}"
+                                        placeholder="dd/mm/yyyy" required>
+                                @else
+                                    <input type="hidden" name="booking_date"
+                                        value="{{ old('booking_date', now()->format('Y-m-d')) }}">
+                                    <input type="text" value="{{ now()->format('d M Y') }}" readonly
+                                        style="background:#f5f5f0;cursor:not-allowed;opacity:0.8;">
+                                @endif
                             </div>
-                            <div class="summary-row">
-                                <span class="summary-k">Status</span>
-                                <span class="summary-v" id="summStatus">
-                                    <span
-                                        class="status-pill status-{{ $currentStatus }}">{{ $statuses[$currentStatus] }}</span>
-                                </span>
+                            <div class="cf">
+                                <label>Delivery Date</label>
+                                <input class="@error('delivery_date') is-invalid @enderror" type="date"
+                                    name="delivery_date"
+                                    value="{{ old('delivery_date', $order?->delivery_date?->format('Y-m-d')) }}"
+                                    placeholder="dd/mm/yyyy" required>
                             </div>
-                            <div class="summary-row remaining-row">
-                                <span class="summary-k">Remaining</span>
-                                <span class="summary-v remaining-amt" id="summRemaining">—</span>
+                            <div class="cf">
+                                <label>Quantity</label>
+                                <input class="@error('quantity') is-invalid @enderror" type="number" name="quantity"
+                                    min="1" max="99" value="{{ old('quantity', $order?->quantity ?? 1) }}"
+                                    required>
                             </div>
-                        </div>
+                            <div class="cf">
+                                <label>Price (Rs.)</label>
+                                <input class="@error('price') is-invalid @enderror" type="text" name="price"
+                                    id="priceInput" value="{{ old('price', $order?->price > 0 ? $order->price : '') }}"
+                                    placeholder="0" oninput="calcRemaining()" required>
+                            </div>
+                            <div class="cf">
+                                <label>Paid (Rs.)</label>
+                                <input class="@error('advance_paid') is-invalid @enderror" type="text"
+                                    name="advance_paid" id="advanceInput"
+                                    value="{{ old('advance_paid', $order?->advance_paid ?? '0') }}" placeholder="0"
+                                    oninput="calcRemaining()">
+                            </div>
 
-                    </div>
-                </div>
+                            {{-- Status dropdown --}}
+                            <div class="cf">
+                                <label>Status</label>
+                                <select name="status" class="status-select" id="statusSelect"
+                                    onchange="updateStatusBadge(this)">
+                                    @php
+                                        $currentStatus = old('status', $order?->status ?? 'pending');
+                                        $statuses = [
+                                            'pending' => 'Pending',
+                                            'stitching' => 'Stitching',
+                                            'ready' => 'Ready',
+                                            'delivered' => 'Delivered',
+                                            'returned' => 'Returned',
+                                            'cancelled' => 'Cancelled',
+                                        ];
+                                    @endphp
+                                    @foreach ($statuses as $val => $label)
+                                        <option value="{{ $val }}"
+                                            {{ $currentStatus === $val ? 'selected' : '' }}>
+                                            {{ $label }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
 
-                {{-- COL 2 — Kameez --}}
-                <div class="col" id="c-suit">
-                    <div class="col-head">
-                        <svg class="ci">
-                            <use href="#i-kameez" />
-                        </svg>
-                        <span class="ce">Kameez</span>
-                    </div>
-                    <div class="ruler"></div>
-                    <div class="col-body">
-                        @php $kameezPoints = $garmentTypes->firstWhere('code','kameez')?->measurementPoints ?? collect(); @endphp
-                        @foreach ($kameezPoints as $point)
-                            <div class="mrow">
-                                <input class="num" type="text" name="kameez[{{ $point->code }}]"
-                                    value="{{ old("kameez.{$point->code}", $measurements['kameez'][$point->code] ?? '') }}"
-                                    placeholder="—">
-                                <div class="ml">
-                                    <span class="u ur">{{ $point->name_ur }}</span>
-                                    @if ($point->icon)
-                                        <svg class="ico">
-                                            <use href="#{{ $point->icon }}" />
-                                        </svg>
-                                    @endif
+                            {{-- Summary footer --}}
+                            <div class="order-summary">
+                                <div class="summary-row">
+                                    <span class="summary-k">Booked</span>
+                                    <span class="summary-v" id="summBooking">
+                                        {{ $order?->booking_date?->format('d M Y') ?? now()->format('d M Y') }}
+                                    </span>
+                                </div>
+                                <div class="summary-row">
+                                    <span class="summary-k">Due</span>
+                                    <span class="summary-v due-date" id="summDelivery">
+                                        {{ $order?->delivery_date?->format('d M Y') ?? '—' }}
+                                    </span>
+                                </div>
+                                <div class="summary-row">
+                                    <span class="summary-k">Status</span>
+                                    <span class="summary-v" id="summStatus">
+                                        <span
+                                            class="status-pill status-{{ $currentStatus }}">{{ $statuses[$currentStatus] }}</span>
+                                    </span>
+                                </div>
+                                <div class="summary-row remaining-row">
+                                    <span class="summary-k">Remaining</span>
+                                    <span class="summary-v remaining-amt" id="summRemaining">—</span>
                                 </div>
                             </div>
-                        @endforeach
-                    </div>
-                </div>
 
-                {{-- COL 3 — Waistcoat --}}
-                <div class="col" id="c-wsk">
-                    <div class="col-head">
-                        <svg class="ci">
-                            <use href="#i-vest" />
-                        </svg>
-                        <span class="ce">Waistcoat</span>
-                    </div>
-                    <div class="ruler"></div>
-                    <div class="col-body">
-                        @php $waistcoatPoints = $garmentTypes->firstWhere('code','waistcoat')?->measurementPoints ?? collect(); @endphp
-                        @foreach ($waistcoatPoints as $point)
-                            <div class="mrow">
-                                <input class="num" type="text" name="waistcoat[{{ $point->code }}]"
-                                    value="{{ old("waistcoat.{$point->code}", $measurements['waistcoat'][$point->code] ?? '') }}"
-                                    placeholder="—">
-                                <div class="ml">
-                                    <span class="u ur">{{ $point->name_ur }}</span>
-                                    @if ($point->icon)
-                                        <svg class="ico">
-                                            <use href="#{{ $point->icon }}" />
-                                        </svg>
-                                    @endif
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-
-                {{-- COL 4 — Stitching --}}
-                <div class="col">
-                    <div class="col-head">
-                        <svg class="ci">
-                            <use href="#i-needle" />
-                        </svg>
-                        <span class="ce">Stitching</span>
-                    </div>
-                    <div class="col-body">
-
-                        <div class="cgrp">Stitch type</div>
-                        @foreach ($designOptions->get('stitch', collect()) as $opt)
-                            <label class="copt">
-                                <input type="checkbox" name="design_options[]" value="{{ $opt->id }}"
-                                    {{ in_array($opt->id, $selectedOptionIds) ? 'checked' : '' }}>
-                                <span class="u ur">{{ $opt->name_ur }}</span>
-                            </label>
-                        @endforeach
-
-                        <div class="cgrp">Cuff &amp; Kaaj</div>
-                        @foreach ($designOptions->get('cuff_kaaj', collect()) as $opt)
-                            <label class="copt">
-                                <input type="checkbox" name="design_options[]" value="{{ $opt->id }}"
-                                    {{ in_array($opt->id, $selectedOptionIds) ? 'checked' : '' }}>
-                                <span class="u ur">{{ $opt->name_ur }}</span>
-                            </label>
-                        @endforeach
-
-                        <div class="cgrp">Extras</div>
-                        @foreach ($designOptions->get('extra', collect()) as $opt)
-                            <label class="copt">
-                                <input type="checkbox" name="design_options[]" value="{{ $opt->id }}"
-                                    {{ in_array($opt->id, $selectedOptionIds) ? 'checked' : '' }}>
-                                <span class="u ur">{{ $opt->name_ur }}</span>
-                            </label>
-                        @endforeach
-
-                    </div>
-                </div>
-
-                {{-- COL 5 — Design --}}
-                <div class="col">
-                    <div class="col-head">
-                        <svg class="ci">
-                            <use href="#i-collar" />
-                        </svg>
-                        <span class="ce">Design</span>
-                    </div>
-                    <div class="col-body">
-
-                        <div class="scolor">
-                            <label>Write for colour</label>
-                            <input type="text" name="colour_note"
-                                value="{{ old('colour_note', $order?->colour_note) }}" placeholder="Colour / fabric">
                         </div>
+                    </div>
 
-                        <div class="cgrp">Collar &amp; Cuff style</div>
-                        <div class="style-grid">
-                            @foreach ($designOptions->get('style', collect()) as $opt)
-                                <label class="sopt">
+                    {{-- COL 2 — Kameez --}}
+                    <div class="col" id="c-suit">
+                        <div class="col-head">
+                            <svg class="ci">
+                                <use href="#i-kameez" />
+                            </svg>
+                            <span class="ce">Kameez</span>
+                        </div>
+                        <div class="ruler"></div>
+                        <div class="col-body">
+                            @php $kameezPoints = $garmentTypes->firstWhere('code','kameez')?->measurementPoints ?? collect(); @endphp
+                            @foreach ($kameezPoints as $point)
+                                <div class="mrow">
+                                    <input class="num" type="text" name="kameez[{{ $point->code }}]"
+                                        value="{{ old("kameez.{$point->code}", $measurements['kameez'][$point->code] ?? '') }}"
+                                        placeholder="—">
+                                    <div class="ml">
+                                        <span class="u ur">{{ $point->name_ur }}</span>
+                                        @if ($point->icon)
+                                            <svg class="ico">
+                                                <use href="#{{ $point->icon }}" />
+                                            </svg>
+                                        @endif
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    {{-- COL 3 — Waistcoat --}}
+                    <div class="col" id="c-wsk">
+                        <div class="col-head">
+                            <svg class="ci">
+                                <use href="#i-vest" />
+                            </svg>
+                            <span class="ce">Waistcoat</span>
+                        </div>
+                        <div class="ruler"></div>
+                        <div class="col-body">
+                            @php $waistcoatPoints = $garmentTypes->firstWhere('code','waistcoat')?->measurementPoints ?? collect(); @endphp
+                            @foreach ($waistcoatPoints as $point)
+                                <div class="mrow">
+                                    <input class="num" type="text" name="waistcoat[{{ $point->code }}]"
+                                        value="{{ old("waistcoat.{$point->code}", $measurements['waistcoat'][$point->code] ?? '') }}"
+                                        placeholder="—">
+                                    <div class="ml">
+                                        <span class="u ur">{{ $point->name_ur }}</span>
+                                        @if ($point->icon)
+                                            <svg class="ico">
+                                                <use href="#{{ $point->icon }}" />
+                                            </svg>
+                                        @endif
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    {{-- COL 4 — Stitching --}}
+                    <div class="col">
+                        <div class="col-head">
+                            <svg class="ci">
+                                <use href="#i-needle" />
+                            </svg>
+                            <span class="ce">Stitching</span>
+                        </div>
+                        <div class="col-body">
+
+                            <div class="cgrp">Stitch type</div>
+                            @foreach ($designOptions->get('stitch', collect()) as $opt)
+                                <label class="copt">
                                     <input type="checkbox" name="design_options[]" value="{{ $opt->id }}"
                                         {{ in_array($opt->id, $selectedOptionIds) ? 'checked' : '' }}>
                                     <span class="u ur">{{ $opt->name_ur }}</span>
-                                    @if (!empty($opt->icon))
-                                        <svg class="ico">
-                                            <use href="#{{ $opt->icon }}" />
-                                        </svg>
-                                    @endif
                                 </label>
                             @endforeach
-                        </div>
 
-                        <div class="sketch">
-                            <svg class="ico">
-                                <use href="#i-pen" />
-                            </svg>
-                            <span>Design sketch area</span>
-                        </div>
-
-                        <textarea name="extra_notes" placeholder="Extra design notes…">{{ old('extra_notes', $order?->extra_notes) }}</textarea>
-
-                        <div class="btn-toggles">
-                            @foreach ($designOptions->get('button', collect()) as $opt)
-                                @php $isOn = in_array($opt->id, $selectedOptionIds); @endphp
-                                <button type="button" class="bt {{ $isOn ? 'on' : '' }}"
-                                    data-option-id="{{ $opt->id }}"
-                                    onclick="toggleButton(this)">{{ $opt->name_ur }}</button>
-                                {{-- Hidden checkbox driven by the toggle button --}}
-                                <input type="checkbox" name="design_options[]" value="{{ $opt->id }}"
-                                    id="btn_opt_{{ $opt->id }}" {{ $isOn ? 'checked' : '' }} style="display:none">
+                            <div class="cgrp">Cuff &amp; Kaaj</div>
+                            @foreach ($designOptions->get('cuff_kaaj', collect()) as $opt)
+                                <label class="copt">
+                                    <input type="checkbox" name="design_options[]" value="{{ $opt->id }}"
+                                        {{ in_array($opt->id, $selectedOptionIds) ? 'checked' : '' }}>
+                                    <span class="u ur">{{ $opt->name_ur }}</span>
+                                </label>
                             @endforeach
+
+                            <div class="cgrp">Extras</div>
+                            @foreach ($designOptions->get('extra', collect()) as $opt)
+                                <label class="copt">
+                                    <input type="checkbox" name="design_options[]" value="{{ $opt->id }}"
+                                        {{ in_array($opt->id, $selectedOptionIds) ? 'checked' : '' }}>
+                                    <span class="u ur">{{ $opt->name_ur }}</span>
+                                </label>
+                            @endforeach
+
                         </div>
-
                     </div>
+
+                    {{-- COL 5 — Design --}}
+                    <div class="col">
+                        <div class="col-head">
+                            <svg class="ci">
+                                <use href="#i-collar" />
+                            </svg>
+                            <span class="ce">Design</span>
+                        </div>
+                        <div class="col-body">
+
+                            <div class="scolor">
+                                <label>Write for colour</label>
+                                <input type="text" name="colour_note"
+                                    value="{{ old('colour_note', $order?->colour_note) }}" placeholder="Colour / fabric">
+                            </div>
+
+                            <div class="cgrp">Collar &amp; Cuff style</div>
+                            <div class="style-grid">
+                                @foreach ($designOptions->get('style', collect()) as $opt)
+                                    <label class="sopt">
+                                        <input type="checkbox" name="design_options[]" value="{{ $opt->id }}"
+                                            {{ in_array($opt->id, $selectedOptionIds) ? 'checked' : '' }}>
+                                        <span class="u ur">{{ $opt->name_ur }}</span>
+                                        @if (!empty($opt->icon))
+                                            <svg class="ico">
+                                                <use href="#{{ $opt->icon }}" />
+                                            </svg>
+                                        @endif
+                                    </label>
+                                @endforeach
+                            </div>
+
+                            <div class="sketch">
+                                <svg class="ico">
+                                    <use href="#i-pen" />
+                                </svg>
+                                <span>Design sketch area</span>
+                            </div>
+
+                            <textarea name="extra_notes" placeholder="Extra design notes…">{{ old('extra_notes', $order?->extra_notes) }}</textarea>
+
+                            <div class="btn-toggles">
+                                @foreach ($designOptions->get('button', collect()) as $opt)
+                                    @php $isOn = in_array($opt->id, $selectedOptionIds); @endphp
+                                    <button type="button" class="bt {{ $isOn ? 'on' : '' }}"
+                                        data-option-id="{{ $opt->id }}"
+                                        onclick="toggleButton(this)">{{ $opt->name_ur }}</button>
+                                    {{-- Hidden checkbox driven by the toggle button --}}
+                                    <input type="checkbox" name="design_options[]" value="{{ $opt->id }}"
+                                        id="btn_opt_{{ $opt->id }}" {{ $isOn ? 'checked' : '' }}
+                                        style="display:none">
+                                @endforeach
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>{{-- /sheet --}}
+
+                {{-- Action bar --}}
+                <div class="actions">
+                    @if ($order)
+                        <button type="button" class="btn btn-danger mr"
+                            onclick="confirmDelete({{ $order->id }})">Delete</button>
+                    @else
+                        <span class="mr"></span>
+                    @endif
+
+                    @if ($order)
+                        <a href="{{ route('orders.print', $order->id) }}" target="_blank"
+                            class="btn btn-ghost">Print</a>
+                    @endif
+
+                    <a href="{{ route('orders.index') }}" class="btn btn-brass">New Order</a>
+                    <button type="submit" class="btn btn-primary">Save Order</button>
                 </div>
-
-            </div>{{-- /sheet --}}
-
-            {{-- Action bar --}}
-            <div class="actions">
-                @if ($order)
-                    <button type="button" class="btn btn-danger mr"
-                        onclick="confirmDelete({{ $order->id }})">Delete</button>
-                @else
-                    <span class="mr"></span>
-                @endif
-
-                @if ($order)
-                    <a href="{{ route('orders.print', $order->id) }}" target="_blank" class="btn btn-ghost">Print</a>
-                @endif
-
-                <a href="{{ route('orders.index') }}" class="btn btn-brass">New Order</a>
-                <button type="submit" class="btn btn-primary">Save Order</button>
-            </div>
 
             </form>
 
@@ -378,14 +370,6 @@
 
         {{-- ============ CLASSIC VIEW ============ --}}
         <div class="classic" id="classic">
-
-            {{-- Classic search bar --}}
-            <form method="GET" action="{{ route('orders.search') }}" class="classic-search" id="classicSearch">
-                <input type="text" name="q" placeholder="Search by suit number or phone…"
-                    value="{{ $searchQuery ?? '' }}">
-                <button type="submit">Search</button>
-                <a href="{{ route('orders.index') }}" class="cls-new">+ New Order</a>
-            </form>
 
             {{-- Classic action bar --}}
             @if ($order)
@@ -578,16 +562,6 @@
 
 @push('scripts')
     <script>
-        // View toggle
-        document.getElementById('menuBtn').addEventListener('click', function() {
-            document.getElementById('nav').classList.toggle('open');
-        });
-        document.querySelectorAll('#nav a').forEach(function(a) {
-            a.addEventListener('click', function() {
-                document.getElementById('nav').classList.remove('open');
-            });
-        });
-
         // ── Customer # lookup — loads directly into this order's fields ──
         // Fetches an existing customer and fills their Name / S-O Reference /
         // Phone, plus their last order's measurements straight into the
@@ -751,12 +725,6 @@
         }
 
         // Auto-hide flash toast
-        var flashToast = document.getElementById('flash-toast');
-        if (flashToast) {
-            setTimeout(function() {
-                flashToast.classList.remove('show');
-            }, 2500);
-        }
 
         // ── Classic view edit/save/cancel ───────────────────────────
 

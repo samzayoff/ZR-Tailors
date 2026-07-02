@@ -79,7 +79,8 @@
                         @php $balance = max(0, $order->price - $order->advance_paid); @endphp
                         <tr>
                             <td class="num">
-                                <a href="{{ route('orders.search', ['q' => $order->order_no]) }}">{{ $order->order_no }}</a>
+                                <a
+                                    href="{{ route('orders.updateOrder', ['q' => $order->order_no]) }}">{{ $order->order_no }}</a>
                             </td>
                             <td>{{ $order->customer->name ?? '—' }}</td>
                             <td class="num">{{ $order->customer->phone ?? '—' }}</td>
@@ -90,7 +91,7 @@
                             <td><span class="status-pill status-{{ $order->status }}">{{ ucfirst($order->status) }}</span>
                             </td>
                             <td>
-                                <a href="{{ route('orders.search', ['q' => $order->order_no, 'edit' => 1]) }}"
+                                <a href="{{ route('orders.updateOrder', ['q' => $order->order_no]) }}"
                                     class="row-edit-btn">Edit</a>
                             </td>
                         </tr>

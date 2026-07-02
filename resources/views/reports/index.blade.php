@@ -3,10 +3,16 @@
 @section('content')
     <main>
 
-        <h1 class="report-title">Report</h1>
+        <div class="report-header-wrap" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+            <h1 class="report-title" style="margin: 0;">Report</h1>
+            <button type="button" class="btn btn-ghost rt-print-btn" onclick="window.print()">🖨 Print</button>
+        </div>
 
         {{-- FILTER BAR --}}
         <form method="GET" action="{{ route('report.index') }}" class="report-filters" id="reportFilters">
+            {{-- Preserve sort params across filter submits --}}
+            <input type="hidden" name="sort_by"  value="{{ $sortBy }}">
+            <input type="hidden" name="sort_dir" value="{{ $sortDir }}">
 
             {{-- Calendar range --}}
             <div class="rf-row">
@@ -21,10 +27,8 @@
                 <div class="cf">
                     <label>Date type</label>
                     <select name="date_field" class="status-select">
-                        <option value="booking_date" {{ $dateField === 'booking_date' ? 'selected' : '' }}>Booking date
-                        </option>
-                        <option value="delivery_date" {{ $dateField === 'delivery_date' ? 'selected' : '' }}>Delivery date
-                        </option>
+                        <option value="booking_date" {{ $dateField === 'booking_date' ? 'selected' : '' }}>Booking date</option>
+                        <option value="delivery_date" {{ $dateField === 'delivery_date' ? 'selected' : '' }}>Delivery date</option>
                     </select>
                 </div>
             </div>
@@ -63,7 +67,7 @@
             </div>
         </form>
 
-        {{-- =     SUMMARY --}}
+        {{-- SUMMARY --}}
         <div class="report-summary">
             <div class="rs-card">
                 <span class="rs-k">Orders</span>
@@ -88,22 +92,48 @@
 
             <div class="rt-toolbar">
 
+                {{-- ── Sort tab (left side) ────────────────────── --}}
+                <div class="rt-sort-tab">
+                    <span class="rt-sort-label">Sort by</span>
+                    @php
+                        $sortFields = [
+                            'customer_id' => 'Cust #',
+                            'order_no'    => 'Suit #',
+                            'balance'     => 'Balance',
+                        ];
+                    @endphp
+                    @foreach ($sortFields as $field => $label)
+                        @php
+                            $isActive = $sortBy === $field;
+                            $nextDir  = ($isActive && $sortDir === 'asc') ? 'desc' : 'asc';
+                            $arrow    = $isActive ? ($sortDir === 'asc' ? '↑' : '↓') : '';
+                        @endphp
+                        <a href="{{ route('report.index', array_merge(request()->except(['sort_by','sort_dir']), ['sort_by' => $field, 'sort_dir' => $nextDir])) }}"
+                           class="rt-sort-btn {{ $isActive ? 'active' : '' }}">
+                            {{ $label }}{{ $arrow ? ' '.$arrow : '' }}
+                        </a>
+                    @endforeach
+                </div>
+
+                {{-- ── Search (right side) ─────────────────────── --}}
                 <div class="searchbar rt-searchbar">
                     <div class="field">
                         <label>Search</label>
                         <input type="text" name="q" form="reportFilters" value="{{ $search }}"
-                            placeholder="Suit #, name, or phone…">
+                            placeholder="Suit #, name, phone, Cust #…">
                     </div>
                     <button type="submit" form="reportFilters" class="btn btn-primary">Search</button>
                     @if ($search !== '')
                         <a href="{{ route('report.index') }}" class="btn btn-ghost">Clear</a>
                     @endif
                 </div>
+
             </div>
 
             <table class="report-table">
                 <thead>
                     <tr>
+                        <th>Cust #</th>
                         <th>Suit #</th>
                         <th>Customer</th>
                         <th>Phone</th>
@@ -120,34 +150,31 @@
                 <tbody>
                     @forelse ($orders as $order)
                         @php
-                            $balance = max(0, $order->price - $order->advance_paid);
+                            $balance   = max(0, $order->price - $order->advance_paid);
                             $payStatus = \App\Http\Controllers\ReportController::paymentStatusFor($order);
                         @endphp
                         <tr>
+                            <td class="num">{{ $order->customer?->id ?? '—' }}</td>
                             <td class="num">
-                                <a
-                                    href="{{ route('orders.search', ['q' => $order->order_no]) }}">{{ $order->order_no }}</a>
+                                <a href="{{ route('orders.updateOrder', ['q' => $order->order_no]) }}">{{ $order->order_no }}</a>
                             </td>
-                            <td>{{ $order->customer->name ?? '—' }}</td>
-                            <td class="num">{{ $order->customer->phone ?? '—' }}</td>
+                            <td>{{ $order->customer?->name ?? '—' }}</td>
+                            <td class="num">{{ $order->customer?->phone ?? '—' }}</td>
                             <td class="num">{{ optional($order->booking_date)->format('d M Y') ?? '—' }}</td>
                             <td class="num">{{ optional($order->delivery_date)->format('d M Y') ?? '—' }}</td>
                             <td class="num">{{ number_format($order->price, 0) }}</td>
                             <td class="num">{{ number_format($order->advance_paid, 0) }}</td>
                             <td class="num">{{ number_format($balance, 0) }}</td>
-                            <td><span class="status-pill status-{{ $order->status }}">{{ ucfirst($order->status) }}</span>
-                            </td>
-                            <td><span
-                                    class="pay-pill pay-{{ $payStatus }}">{{ $payStatus === 'partial' ? 'Partial Paid' : ucfirst($payStatus) }}</span>
-                            </td>
+                            <td><span class="status-pill status-{{ $order->status }}">{{ ucfirst($order->status) }}</span></td>
+                            <td><span class="pay-pill pay-{{ $payStatus }}">{{ $payStatus === 'partial' ? 'Partial Paid' : ucfirst($payStatus) }}</span></td>
                             <td>
-                                <a href="{{ route('orders.search', ['q' => $order->order_no, 'edit' => 1]) }}"
+                                <a href="{{ route('orders.updateOrder', ['q' => $order->order_no]) }}"
                                     class="row-edit-btn">Edit</a>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="11" class="report-empty">No orders match the selected filters.</td>
+                            <td colspan="12" class="report-empty">No orders match the selected filters.</td>
                         </tr>
                     @endforelse
                 </tbody>

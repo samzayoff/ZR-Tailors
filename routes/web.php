@@ -22,15 +22,17 @@ Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard
 // Reports (date range + status + payment filters)
 Route::get('/report', [ReportController::class, 'index'])->name('report.index');
 
-// Search (GET with ?q=...)
-Route::get('/search', [OrderController::class, 'search'])->name('orders.search');
-
-// VIEW & UPDATE only.
-
+// Search Customer page: find a customer by number to VIEW & UPDATE their
+// orders only. No new order can ever be created/saved from this page.
 Route::get('/orders/lookup', [OrderController::class, 'searchOrder'])->name('orders.searchOrder');
 
-// find order
-Route::get('/customers/{id}/lookup', [CustomerController::class, 'lookup'])->name('customers.lookup');
+// Update Order page: find an order by SUIT NUMBER (or phone) to VIEW &
+// UPDATE it directly. No new order can ever be created/saved from here.
+Route::get('/orders/update', [OrderController::class, 'updateOrder'])->name('orders.updateOrder');
+
+// Customer lookup by customer number (id) — read-only, used by order form
+// to preview an existing customer's name/last measurements for reference.
+Route::get('/customers/{id}/lookup', [CustomerController::class, 'lookup'])->name('customers.lookup')->whereNumber('id');
 
 // Store new order
 Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');

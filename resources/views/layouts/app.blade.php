@@ -100,12 +100,14 @@
             </div>
             <button class="menu-btn" id="menuBtn" aria-label="Open menu">&#9776;</button>
             <nav id="nav">
-                {{-- Routes --}}
+                <a href="{{ route('orders.searchOrder') }}"
+                    class="key {{ request()->routeIs('orders.searchOrder') ? 'is-active' : '' }}">Search Customer</a>
+                <a href="{{ route('orders.updateOrder') }}"
+                    class="key {{ request()->routeIs('orders.updateOrder') ? 'is-active' : '' }}">Update Order</a>
+                <a href="{{ route('orders.index') }}"
+                    class="key {{ request()->routeIs('orders.index') ? 'is-active' : '' }}">New Order</a>
                 <a href="{{ route('dashboard.index') }}"
                     class="key {{ request()->routeIs('dashboard.index') ? 'is-active' : '' }}">Dashboard</a>
-                <a href="{{ route('orders.searchOrder') }}"
-                    class="key {{ request()->routeIs('orders.searchOrder') ? 'is-active' : '' }}">Find Order</a>
-                <a href="{{ route('orders.index') }}" class="key">New Order</a>
                 <a href="{{ route('report.index') }}"
                     class="key {{ request()->routeIs('report.index') ? 'is-active' : '' }}">Report</a>
                 <a href="#" onclick="window.print();return false;">Print</a>
@@ -125,7 +127,11 @@
     <div id="toast"><span id="toastMsg">Saved</span></div>
 
     {{-- ===== FOOTER ===== --}}
-
+    <footer class="site-footer">
+        <div class="footer-inner">
+            &copy; {{ date('Y') }} <b>ZR Creation</b> — Tailor for Gents. All rights reserved.
+        </div>
+    </footer>
 
     <script src="{{ asset('js/app.js') }}"></script>
     @stack('scripts')

@@ -597,20 +597,45 @@ nav a.is-active { background: rgba(255,255,255,.12); color: #fff; }
 .rf-row:last-child { border-bottom: none; padding-bottom: 0; }
 .rf-row .cf { margin-bottom: 0; min-width: 150px; }
 .rt-toolbar {
-  display: flex; align-items: center; justify-content: flex-end; gap: 14px; flex-wrap: wrap;
-  padding: 14px 16px; border-bottom: 1px solid var(--line); background: #faf7f0;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  padding: 10px 16px; border-bottom: 1px solid var(--line); background: #faf7f0;
 }
 .rt-hint { font-size: 11px; color: var(--muted); margin-right: auto; }
 .rt-searchbar {
   margin-bottom: 0; padding: 8px 12px; flex-wrap: nowrap;
-  width: auto; margin-left: auto;
+  width: auto;
 }
-.rt-searchbar .field { flex: 0 0 240px; }
+.rt-searchbar .field { flex: 0 0 200px; }
+.rt-print-btn { padding: 8px 14px; font-size: 13px; white-space: nowrap; }
+
+/* ── Sort tab ──────────────────────────────────────────────────────── */
+.rt-sort-tab {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+}
+.rt-sort-label {
+  font-size: 11px; font-weight: 600; letter-spacing: .4px;
+  text-transform: uppercase; color: var(--muted); margin-right: 2px;
+}
+.rt-sort-btn {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 6px 12px; border-radius: 999px; font-size: 12.5px; font-weight: 600;
+  text-decoration: none; border: 1px solid var(--line);
+  background: #fff; color: var(--muted);
+  transition: background .13s, border-color .13s, color .13s;
+  white-space: nowrap;
+}
+.rt-sort-btn:hover { border-color: var(--brass); color: var(--ink); background: #fbf4e4; }
+.rt-sort-btn.active {
+  background: var(--ink); border-color: var(--ink); color: #fff;
+}
+
 @media (max-width: 720px) {
-  .rt-toolbar { justify-content: stretch; }
+  .rt-toolbar { justify-content: flex-start; }
   .rt-hint { margin-right: 0; flex-basis: 100%; }
+  .rt-sort-tab { flex-basis: 100%; }
   .rt-searchbar { width: 100%; margin-left: 0; flex-wrap: wrap; }
   .rt-searchbar .field { flex: 1 1 100%; }
+  .rt-print-btn { flex-basis: 100%; }
 }
 .rf-label {
   font-size: 11px; font-weight: 600; letter-spacing: .4px;
@@ -806,4 +831,69 @@ nav a.is-active { background: rgba(255,255,255,.12); color: #fff; }
 }
 .just-filled {
   animation: justFilledFlash 1.4s ease-out;
+}
+
+/* ── Print styles (every page) ────────────────────────────────────────── */
+@media print {
+  /* Hide chrome we don't want on paper */
+  header, footer.site-footer,
+  .menu-btn, .strip, .actions, .classic-actions,
+  .searchbar, .classic-search, .report-filters,
+  .rf-actions, .rt-toolbar, .rt-sort-tab, .rt-print-btn,
+  #toast, .flash-toast,
+  nav, .btn, .cls-btn,
+  .site-footer { display: none !important; }
+
+  /* Reset layout for print */
+  body {
+    background: #fff !important;
+    color: #000 !important;
+    font-size: 11pt;
+    padding: 0;
+    margin: 0;
+  }
+
+  main { max-width: 100%; padding: 0; margin: 0; }
+
+  /* Make the measurement sheet stack in 2-column on print */
+  .sheet {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    border: 1px solid #999 !important;
+    box-shadow: none !important;
+    page-break-inside: avoid;
+  }
+
+  .col { border-right: 1px solid #ccc !important; }
+
+  /* Classic legacy grid on print */
+  .legacy {
+    grid-template-columns: 200px 1fr 1fr 1fr !important;
+    border: 1px solid #999 !important;
+  }
+  .classic { display: block !important; }
+  #modern  { display: none !important; }
+
+  /* Report table */
+  .report-table-wrap { box-shadow: none !important; border: 1px solid #ccc !important; }
+  .report-table { min-width: 0 !important; font-size: 9pt; }
+  .report-table th, .report-table td { padding: 5px 7px !important; }
+  .report-summary { grid-template-columns: repeat(4,1fr) !important; }
+
+  /* Summary cards */
+  .rs-card { border: 1px solid #ccc !important; box-shadow: none !important; }
+
+  /* Dashboard */
+  .dash-charts { display: none !important; }
+  .dash-summary .rs-card { border: 1px solid #ccc !important; }
+
+  /* Links */
+  a[href]::after { content: none !important; }
+
+  /* Page title banner */
+  .report-title, .dash-subtitle { color: #000 !important; }
+
+  /* Strip colour backgrounds */
+  .col-head { background: #f5f5f5 !important; }
+  .status-pill, .pay-pill { border: 1px solid #999 !important; background: #fff !important; color: #000 !important; }
 }
