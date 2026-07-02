@@ -1,0 +1,30 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+class Customer extends Model
+{
+    protected $fillable = [
+        'name',
+        'phone',
+        'reference',
+        'address',
+        'notes',
+    ];
+
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class);
+    }
+
+    /**
+     * Find by phone or return null.
+     */
+    public static function findByPhone(string $phone): ?self
+    {
+        return self::where('phone', $phone)->first();
+    }
+}
