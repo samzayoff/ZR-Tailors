@@ -5,9 +5,7 @@
 
         <h1 class="report-title">Dashboard — {{ $today->format('d M Y') }}</h1>
 
-        {{-- ===================================================
-             TODAY'S STAT CARDS
-        ==================================================== --}}
+        {{-- TODAY'S STAT CARDS --}}
         <div class="report-summary dash-summary dash-summary-6">
 
             <div class="rs-card">
@@ -15,7 +13,7 @@
                 <span class="rs-v num">Rs {{ number_format($todaySales, 0) }}</span>
             </div>
             <div class="rs-card">
-                <span class="rs-k">Collected Today</span>
+                <span class="rs-k">Cash Collected Today</span>
                 <span class="rs-v num">Rs {{ number_format($todayCollected, 0) }}</span>
             </div>
             <div class="rs-card">
@@ -40,9 +38,7 @@
 
         </div>
 
-        {{-- ===================================================
-             CHARTS — this month
-        ==================================================== --}}
+        {{-- CHARTS — this mont --}}
         <div class="dash-charts">
             <div class="dash-chart-card">
                 <h2 class="dash-subtitle">Orders Per Day — Last 30 Days</h2>
@@ -54,9 +50,8 @@
             </div>
         </div>
 
-        {{-- ===================================================
-             TODAY'S DUE ORDERS TABLE
-        ==================================================== --}}
+        {{-- TODAY'S DUE ORDERS TABLE
+        --}}
         <h2 class="dash-subtitle">Orders Due Today</h2>
 
         <div class="report-table-wrap">

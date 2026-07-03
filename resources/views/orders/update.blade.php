@@ -7,18 +7,20 @@
             <button id="btnModern" class="on" onclick="setView('modern')">Modern view</button>
             <button id="btnClassic" onclick="setView('classic')">Classic (old system)</button>
         </div>
-        <span class="hint"><b>Update Order</b> — search by suit number or phone, then view &amp; edit the exact
-            order. This page cannot create a new order.</span>
     </div>
 
     <main>
 
         {{-- Search bar — by suit number or phone --}}
+        <div class="report-header-wrap"
+            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+            <h1 class="report-title" style="margin: 0;">Update Order</h1>
+        </div>
         <form method="GET" action="{{ route('orders.updateOrder') }}" class="searchbar" id="search">
             <div class="field">
                 <label>Search by suit number or phone</label>
-                <input type="text" name="q" placeholder="6617 / 03100924747" value="{{ $searchQuery ?? '' }}"
-                    autofocus>
+                <input type="text" name="q" placeholder="Suit Number / Phone Number"
+                    value="{{ $searchQuery ?? '' }}" autofocus>
             </div>
             <button type="submit" class="btn btn-ghost">Search</button>
         </form>
@@ -41,7 +43,8 @@
 
         @if (!$order && ($searchQuery ?? '') !== '')
             <div class="customer-lookup-panel" style="margin-top:4px; margin-bottom: 16px;">
-                <div class="clp-empty">No order found for "{{ $searchQuery }}". Check the suit number or phone and try again.</div>
+                <div class="clp-empty">No order found for "{{ $searchQuery }}". Check the suit number or phone and try
+                    again.</div>
             </div>
         @elseif (!$order)
             <div class="customer-lookup-panel" style="margin-top:4px; margin-bottom: 16px;">
@@ -82,8 +85,8 @@
                             </div>
                             <div class="cf">
                                 <label>Phone</label>
-                                <input type="text" name="phone"
-                                    value="{{ old('phone', $order?->customer?->phone) }}" placeholder="03XXXXXXXXX">
+                                <input type="text" name="phone" value="{{ old('phone', $order?->customer?->phone) }}"
+                                    placeholder="03XXXXXXXXX">
                             </div>
                             <div class="cf">
                                 <label>Suit / Order No</label>
@@ -95,14 +98,14 @@
                                 <label>Booking Date</label>
                                 <input class="@error('booking_date') is-invalid @enderror" type="date"
                                     name="booking_date"
-                                    value="{{ old('booking_date', $order?->booking_date?->format('Y-m-d') ?? now()->format('Y-m-d')) }}" required>
+                                    value="{{ old('booking_date', $order?->booking_date?->format('Y-m-d') ?? now()->format('Y-m-d')) }}"
+                                    required>
                             </div>
                             <div class="cf">
                                 <label>Delivery Date</label>
                                 <input class="@error('delivery_date') is-invalid @enderror" type="date"
                                     name="delivery_date"
-                                    value="{{ old('delivery_date', $order?->delivery_date?->format('Y-m-d')) }}"
-                                    required>
+                                    value="{{ old('delivery_date', $order?->delivery_date?->format('Y-m-d')) }}" required>
                             </div>
                             <div class="cf">
                                 <label>Quantity</label>
@@ -113,7 +116,8 @@
                             <div class="cf">
                                 <label>Price (Rs.)</label>
                                 <input class="@error('price') is-invalid @enderror" type="text" name="price"
-                                    id="priceInput" value="{{ old('price', ($order && $order->price > 0) ? $order->price : '') }}"
+                                    id="priceInput"
+                                    value="{{ old('price', $order && $order->price > 0 ? $order->price : '') }}"
                                     placeholder="0" oninput="calcRemaining()" required>
                             </div>
                             <div class="cf">
@@ -176,370 +180,382 @@
                         </div>
                     </div>
 
-                        {{-- COL 2 — Kameez --}}
-                        <div class="col" id="c-suit">
-                            <div class="col-head">
-                                <svg class="ci">
-                                    <use href="#i-kameez" />
-                                </svg>
-                                <span class="ce">Kameez</span>
-                            </div>
-                            <div class="ruler"></div>
-                            <div class="col-body">
-                                @php $kameezPoints = $garmentTypes->firstWhere('code', 'kameez')?->measurementPoints ?? collect(); @endphp
-                                @foreach ($kameezPoints as $point)
-                                    <div class="mrow">
-                                        <input class="num" type="text" name="kameez[{{ $point->code }}]"
-                                            value="{{ old("kameez.{$point->code}", $measurements['kameez'][$point->code] ?? '') }}"
-                                            placeholder="—">
-                                        <div class="ml">
-                                            <span class="u ur">{{ $point->name_ur }}</span>
-                                            @if ($point->icon)
-                                                <svg class="ico">
-                                                    <use href="#{{ $point->icon }}" />
-                                                </svg>
-                                            @endif
-                                        </div>
+                    {{-- COL 2 — Kameez --}}
+                    <div class="col" id="c-suit">
+                        <div class="col-head">
+                            <svg class="ci">
+                                <use href="#i-kameez" />
+                            </svg>
+                            <span class="ce">Kameez</span>
+                        </div>
+                        <div class="ruler"></div>
+                        <div class="col-body">
+                            @php $kameezPoints = $garmentTypes->firstWhere('code', 'kameez')?->measurementPoints ?? collect(); @endphp
+                            @foreach ($kameezPoints as $point)
+                                <div class="mrow">
+                                    <input class="num" type="text" name="kameez[{{ $point->code }}]"
+                                        value="{{ old("kameez.{$point->code}", $measurements['kameez'][$point->code] ?? '') }}"
+                                        placeholder="—">
+                                    <div class="ml">
+                                        <span class="u ur">{{ $point->name_ur }}</span>
+                                        @if ($point->icon)
+                                            <svg class="ico">
+                                                <use href="#{{ $point->icon }}" />
+                                            </svg>
+                                        @endif
                                     </div>
-                                @endforeach
-                            </div>
-                        </div>
-
-                        {{-- COL 3 — Waistcoat --}}
-                        <div class="col" id="c-wsk">
-                            <div class="col-head">
-                                <svg class="ci">
-                                    <use href="#i-vest" />
-                                </svg>
-                                <span class="ce">Waistcoat</span>
-                            </div>
-                            <div class="ruler"></div>
-                            <div class="col-body">
-                                @php $waistcoatPoints = $garmentTypes->firstWhere('code', 'waistcoat')?->measurementPoints ?? collect(); @endphp
-                                @foreach ($waistcoatPoints as $point)
-                                    <div class="mrow">
-                                        <input class="num" type="text" name="waistcoat[{{ $point->code }}]"
-                                            value="{{ old("waistcoat.{$point->code}", $measurements['waistcoat'][$point->code] ?? '') }}"
-                                            placeholder="—">
-                                        <div class="ml">
-                                            <span class="u ur">{{ $point->name_ur }}</span>
-                                            @if ($point->icon)
-                                                <svg class="ico">
-                                                    <use href="#{{ $point->icon }}" />
-                                                </svg>
-                                            @endif
-                                        </div>
-                                    </div>
-                                @endforeach
-                            </div>
-                        </div>
-
-                        {{-- COL 4 — Stitching --}}
-                        <div class="col">
-                            <div class="col-head">
-                                <svg class="ci">
-                                    <use href="#i-needle" />
-                                </svg>
-                                <span class="ce">Stitching</span>
-                            </div>
-                            <div class="col-body">
-
-                                <div class="cgrp">Stitch type</div>
-                                @foreach ($designOptions->get('stitch', collect()) as $opt)
-                                    <label class="copt">
-                                        <input type="checkbox" name="design_options[]" value="{{ $opt->id }}"
-                                            {{ in_array($opt->id, $selectedOptionIds) ? 'checked' : '' }}>
-                                        <span class="u ur">{{ $opt->name_ur }}</span>
-                                    </label>
-                                @endforeach
-
-                                <div class="cgrp">Cuff &amp; Kaaj</div>
-                                @foreach ($designOptions->get('cuff_kaaj', collect()) as $opt)
-                                    <label class="copt">
-                                        <input type="checkbox" name="design_options[]" value="{{ $opt->id }}"
-                                            {{ in_array($opt->id, $selectedOptionIds) ? 'checked' : '' }}>
-                                        <span class="u ur">{{ $opt->name_ur }}</span>
-                                    </label>
-                                @endforeach
-
-                                <div class="cgrp">Extras</div>
-                                @foreach ($designOptions->get('extra', collect()) as $opt)
-                                    <label class="copt">
-                                        <input type="checkbox" name="design_options[]" value="{{ $opt->id }}"
-                                            {{ in_array($opt->id, $selectedOptionIds) ? 'checked' : '' }}>
-                                        <span class="u ur">{{ $opt->name_ur }}</span>
-                                    </label>
-                                @endforeach
-
-                            </div>
-                        </div>
-
-                        {{-- COL 5 — Design --}}
-                        <div class="col">
-                            <div class="col-head">
-                                <svg class="ci">
-                                    <use href="#i-collar" />
-                                </svg>
-                                <span class="ce">Design</span>
-                            </div>
-                            <div class="col-body">
-
-                                <div class="scolor">
-                                    <label>Write for colour</label>
-                                    <input type="text" name="colour_note"
-                                        value="{{ old('colour_note', $order?->colour_note) }}"
-                                        placeholder="Colour / fabric">
                                 </div>
-
-                                <div class="cgrp">Collar &amp; Cuff style</div>
-                                <div class="style-grid">
-                                    @foreach ($designOptions->get('style', collect()) as $opt)
-                                        <label class="sopt">
-                                            <input type="checkbox" name="design_options[]" value="{{ $opt->id }}"
-                                                {{ in_array($opt->id, $selectedOptionIds) ? 'checked' : '' }}>
-                                            <span class="u ur">{{ $opt->name_ur }}</span>
-                                            @if (!empty($opt->icon))
-                                                <svg class="ico">
-                                                    <use href="#{{ $opt->icon }}" />
-                                                </svg>
-                                            @endif
-                                        </label>
-                                    @endforeach
-                                </div>
-
-                                <div class="sketch">
-                                    <svg class="ico">
-                                        <use href="#i-pen" />
-                                    </svg>
-                                    <span>Design sketch area</span>
-                                </div>
-
-                                <textarea name="extra_notes" placeholder="Extra design notes…">{{ old('extra_notes', $order?->extra_notes) }}</textarea>
-
-                                <div class="btn-toggles">
-                                    @foreach ($designOptions->get('button', collect()) as $opt)
-                                        @php $isOn = in_array($opt->id, $selectedOptionIds); @endphp
-                                        <button type="button" class="bt {{ $isOn ? 'on' : '' }}"
-                                            data-option-id="{{ $opt->id }}"
-                                            onclick="toggleButton(this)">{{ $opt->name_ur }}</button>
-                                        <input type="checkbox" name="design_options[]" value="{{ $opt->id }}"
-                                            id="btn_opt_{{ $opt->id }}" {{ $isOn ? 'checked' : '' }}
-                                            style="display:none">
-                                    @endforeach
-                                </div>
-
-                            </div>
+                            @endforeach
                         </div>
-
-                    </div>{{-- /sheet --}}
-
-                    {{-- Action bar — view & update only, no "save as new" path exists here --}}
-                    <div class="actions">
-                        @if ($order)
-                            <button type="button" class="btn btn-danger mr" onclick="confirmDelete({{ $order->id }})">Delete</button>
-                            <a href="{{ route('orders.print', $order->id) }}" target="_blank" class="btn btn-ghost">Print</a>
-                            <button type="submit" class="btn btn-primary">Save Changes</button>
-                        @else
-                            <button type="button" class="btn btn-danger mr" disabled style="opacity: 0.5; cursor: not-allowed;">Delete</button>
-                            <button type="button" class="btn btn-ghost" disabled style="opacity: 0.5; cursor: not-allowed;">Print</button>
-                            <button type="button" class="btn btn-primary" disabled style="opacity: 0.5; cursor: not-allowed;">Save Changes</button>
-                        @endif
                     </div>
 
-                </form>
+                    {{-- COL 3 — Waistcoat --}}
+                    <div class="col" id="c-wsk">
+                        <div class="col-head">
+                            <svg class="ci">
+                                <use href="#i-vest" />
+                            </svg>
+                            <span class="ce">Waistcoat</span>
+                        </div>
+                        <div class="ruler"></div>
+                        <div class="col-body">
+                            @php $waistcoatPoints = $garmentTypes->firstWhere('code', 'waistcoat')?->measurementPoints ?? collect(); @endphp
+                            @foreach ($waistcoatPoints as $point)
+                                <div class="mrow">
+                                    <input class="num" type="text" name="waistcoat[{{ $point->code }}]"
+                                        value="{{ old("waistcoat.{$point->code}", $measurements['waistcoat'][$point->code] ?? '') }}"
+                                        placeholder="—">
+                                    <div class="ml">
+                                        <span class="u ur">{{ $point->name_ur }}</span>
+                                        @if ($point->icon)
+                                            <svg class="ico">
+                                                <use href="#{{ $point->icon }}" />
+                                            </svg>
+                                        @endif
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
 
-            </div>{{-- /modern --}}
+                    {{-- COL 4 — Stitching --}}
+                    <div class="col">
+                        <div class="col-head">
+                            <svg class="ci">
+                                <use href="#i-needle" />
+                            </svg>
+                            <span class="ce">Stitching</span>
+                        </div>
+                        <div class="col-body">
 
-            {{-- ============ CLASSIC VIEW ============ --}}
-            <div class="classic" id="classic">
+                            <div class="cgrp">Stitch type</div>
+                            @foreach ($designOptions->get('stitch', collect()) as $opt)
+                                <label class="copt">
+                                    <input type="checkbox" name="design_options[]" value="{{ $opt->id }}"
+                                        {{ in_array($opt->id, $selectedOptionIds) ? 'checked' : '' }}>
+                                    <span class="u ur">{{ $opt->name_ur }}</span>
+                                </label>
+                            @endforeach
 
-                <div class="classic-actions">
+                            <div class="cgrp">Cuff &amp; Kaaj</div>
+                            @foreach ($designOptions->get('cuff_kaaj', collect()) as $opt)
+                                <label class="copt">
+                                    <input type="checkbox" name="design_options[]" value="{{ $opt->id }}"
+                                        {{ in_array($opt->id, $selectedOptionIds) ? 'checked' : '' }}>
+                                    <span class="u ur">{{ $opt->name_ur }}</span>
+                                </label>
+                            @endforeach
+
+                            <div class="cgrp">Extras</div>
+                            @foreach ($designOptions->get('extra', collect()) as $opt)
+                                <label class="copt">
+                                    <input type="checkbox" name="design_options[]" value="{{ $opt->id }}"
+                                        {{ in_array($opt->id, $selectedOptionIds) ? 'checked' : '' }}>
+                                    <span class="u ur">{{ $opt->name_ur }}</span>
+                                </label>
+                            @endforeach
+
+                        </div>
+                    </div>
+
+                    {{-- COL 5 — Design --}}
+                    <div class="col">
+                        <div class="col-head">
+                            <svg class="ci">
+                                <use href="#i-collar" />
+                            </svg>
+                            <span class="ce">Design</span>
+                        </div>
+                        <div class="col-body">
+
+                            <div class="scolor">
+                                <label>Write for colour</label>
+                                <input type="text" name="colour_note"
+                                    value="{{ old('colour_note', $order?->colour_note) }}" placeholder="Colour / fabric">
+                            </div>
+
+                            <div class="cgrp">Collar &amp; Cuff style</div>
+                            <div class="style-grid">
+                                @foreach ($designOptions->get('style', collect()) as $opt)
+                                    <label class="sopt">
+                                        <input type="checkbox" name="design_options[]" value="{{ $opt->id }}"
+                                            {{ in_array($opt->id, $selectedOptionIds) ? 'checked' : '' }}>
+                                        <span class="u ur">{{ $opt->name_ur }}</span>
+                                        @if (!empty($opt->icon))
+                                            <svg class="ico">
+                                                <use href="#{{ $opt->icon }}" />
+                                            </svg>
+                                        @endif
+                                    </label>
+                                @endforeach
+                            </div>
+
+                            <div class="sketch">
+                                <svg class="ico">
+                                    <use href="#i-pen" />
+                                </svg>
+                                <span>Design sketch area</span>
+                            </div>
+
+                            <textarea name="extra_notes" placeholder="Extra design notes…">{{ old('extra_notes', $order?->extra_notes) }}</textarea>
+
+                            <div class="btn-toggles">
+                                @foreach ($designOptions->get('button', collect()) as $opt)
+                                    @php $isOn = in_array($opt->id, $selectedOptionIds); @endphp
+                                    <button type="button" class="bt {{ $isOn ? 'on' : '' }}"
+                                        data-option-id="{{ $opt->id }}"
+                                        onclick="toggleButton(this)">{{ $opt->name_ur }}</button>
+                                    <input type="checkbox" name="design_options[]" value="{{ $opt->id }}"
+                                        id="btn_opt_{{ $opt->id }}" {{ $isOn ? 'checked' : '' }}
+                                        style="display:none">
+                                @endforeach
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>{{-- /sheet --}}
+
+                {{-- Action bar — view & update only, no "save as new" path exists here --}}
+                <div class="actions">
                     @if ($order)
-                        <button type="button" class="cls-btn cls-edit" id="clsEditBtn" onclick="classicEdit()">✏ Edit</button>
-                        <button type="button" class="cls-btn cls-save" id="clsSaveBtn" onclick="classicSave()" style="display:none">💾 Save</button>
-                        <button type="button" class="cls-btn cls-cancel" id="clsCancelBtn" onclick="classicCancel()" style="display:none">✕ Cancel</button>
-                        <a href="{{ route('orders.print', $order->id) }}" target="_blank" class="cls-btn cls-print">🖨 Print</a>
-                        <button type="button" class="cls-btn cls-delete" onclick="confirmDelete({{ $order->id }})">🗑 Delete</button>
+                        <button type="button" class="btn btn-danger mr"
+                            onclick="confirmDelete({{ $order->id }})">Delete</button>
+                        <a href="{{ route('orders.print', $order->id) }}" target="_blank"
+                            class="btn btn-ghost">Print</a>
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
                     @else
-                        <button type="button" class="cls-btn cls-edit" disabled style="opacity:0.5;cursor:not-allowed;">✏ Edit</button>
-                        <button type="button" class="cls-btn cls-print" disabled style="opacity:0.5;pointer-events:none;">🖨 Print</button>
-                        <button type="button" class="cls-btn cls-delete" disabled style="opacity:0.5;cursor:not-allowed;">🗑 Delete</button>
+                        <button type="button" class="btn btn-danger mr" disabled
+                            style="opacity: 0.5; cursor: not-allowed;">Delete</button>
+                        <button type="button" class="btn btn-ghost" disabled
+                            style="opacity: 0.5; cursor: not-allowed;">Print</button>
+                        <button type="button" class="btn btn-primary" disabled
+                            style="opacity: 0.5; cursor: not-allowed;">Save Changes</button>
                     @endif
                 </div>
 
-                {{-- Hidden update form for classic edit --}}
-                <form id="classicForm" method="POST" action="{{ $order ? route('orders.update', $order->id) : '#' }}"
-                    style="display:none">
-                    @csrf
-                    @method('PUT')
-                    <input type="hidden" name="return_to" value="updateOrder">
-                    <input type="hidden" name="name" id="cf_name" value="{{ $order?->customer?->name }}">
-                    <input type="hidden" name="reference" id="cf_reference" value="{{ $order?->customer?->reference }}">
-                    <input type="hidden" name="phone" id="cf_phone" value="{{ $order?->customer?->phone }}">
-                    <input type="hidden" name="order_no" id="cf_order_no" value="{{ $order?->order_no }}">
-                    <input type="hidden" name="booking_date" id="cf_booking_date"
-                        value="{{ $order?->booking_date?->format('Y-m-d') }}">
-                    <input type="hidden" name="delivery_date" id="cf_delivery_date"
-                        value="{{ $order?->delivery_date?->format('Y-m-d') }}">
-                    <input type="hidden" name="quantity" id="cf_quantity" value="{{ $order?->quantity }}">
-                    <input type="hidden" name="price" id="cf_price" value="{{ $order?->price }}">
-                    <input type="hidden" name="advance_paid" id="cf_advance" value="{{ $order?->advance_paid }}">
-                    <input type="hidden" name="status" id="cf_status" value="{{ $order?->status }}">
-                    <input type="hidden" name="colour_note" id="cf_colour" value="{{ $order?->colour_note }}">
-                    <input type="hidden" name="extra_notes" id="cf_notes" value="{{ $order?->extra_notes }}">
-                    @foreach ($selectedOptionIds as $oid)
-                        <input type="hidden" name="design_options[]" value="{{ $oid }}">
+            </form>
+
+        </div>{{-- /modern --}}
+
+        {{-- ============ CLASSIC VIEW ============ --}}
+        <div class="classic" id="classic">
+
+            <div class="classic-actions">
+                @if ($order)
+                    <button type="button" class="cls-btn cls-edit" id="clsEditBtn" onclick="classicEdit()">✏
+                        Edit</button>
+                    <button type="button" class="cls-btn cls-save" id="clsSaveBtn" onclick="classicSave()"
+                        style="display:none">💾 Save</button>
+                    <button type="button" class="cls-btn cls-cancel" id="clsCancelBtn" onclick="classicCancel()"
+                        style="display:none">✕ Cancel</button>
+                    <a href="{{ route('orders.print', $order->id) }}" target="_blank" class="cls-btn cls-print">🖨
+                        Print</a>
+                    <button type="button" class="cls-btn cls-delete" onclick="confirmDelete({{ $order->id }})">🗑
+                        Delete</button>
+                @else
+                    <button type="button" class="cls-btn cls-edit" disabled style="opacity:0.5;cursor:not-allowed;">✏
+                        Edit</button>
+                    <button type="button" class="cls-btn cls-print" disabled style="opacity:0.5;pointer-events:none;">🖨
+                        Print</button>
+                    <button type="button" class="cls-btn cls-delete" disabled style="opacity:0.5;cursor:not-allowed;">🗑
+                        Delete</button>
+                @endif
+            </div>
+
+            {{-- Hidden update form for classic edit --}}
+            <form id="classicForm" method="POST" action="{{ $order ? route('orders.update', $order->id) : '#' }}"
+                style="display:none">
+                @csrf
+                @method('PUT')
+                <input type="hidden" name="return_to" value="updateOrder">
+                <input type="hidden" name="name" id="cf_name" value="{{ $order?->customer?->name }}">
+                <input type="hidden" name="reference" id="cf_reference" value="{{ $order?->customer?->reference }}">
+                <input type="hidden" name="phone" id="cf_phone" value="{{ $order?->customer?->phone }}">
+                <input type="hidden" name="order_no" id="cf_order_no" value="{{ $order?->order_no }}">
+                <input type="hidden" name="booking_date" id="cf_booking_date"
+                    value="{{ $order?->booking_date?->format('Y-m-d') }}">
+                <input type="hidden" name="delivery_date" id="cf_delivery_date"
+                    value="{{ $order?->delivery_date?->format('Y-m-d') }}">
+                <input type="hidden" name="quantity" id="cf_quantity" value="{{ $order?->quantity }}">
+                <input type="hidden" name="price" id="cf_price" value="{{ $order?->price }}">
+                <input type="hidden" name="advance_paid" id="cf_advance" value="{{ $order?->advance_paid }}">
+                <input type="hidden" name="status" id="cf_status" value="{{ $order?->status }}">
+                <input type="hidden" name="colour_note" id="cf_colour" value="{{ $order?->colour_note }}">
+                <input type="hidden" name="extra_notes" id="cf_notes" value="{{ $order?->extra_notes }}">
+                @foreach ($selectedOptionIds as $oid)
+                    <input type="hidden" name="design_options[]" value="{{ $oid }}">
+                @endforeach
+                @foreach (['kameez', 'waistcoat'] as $gc)
+                    @foreach ($measurements[$gc] ?? [] as $code => $val)
+                        <input type="hidden" name="{{ $gc }}[{{ $code }}]"
+                            value="{{ $val }}">
                     @endforeach
-                    @foreach (['kameez', 'waistcoat'] as $gc)
-                        @foreach ($measurements[$gc] ?? [] as $code => $val)
-                            <input type="hidden" name="{{ $gc }}[{{ $code }}]"
-                                value="{{ $val }}">
-                        @endforeach
-                    @endforeach
-                </form>
+                @endforeach
+            </form>
 
-                <div class="legacy">
-                    {{-- Customer column --}}
-                    <div>
-                        {{-- VIEW mode --}}
-                        <div class="cls-view">
-                            <div class="row"><span class="k">Name</span> <span class="v"
-                                    id="vw_name">{{ $order?->customer?->name ?? '—' }}</span></div>
-                            <div class="row"><span class="k">S/O</span> <span class="v"
-                                    id="vw_ref">{{ $order?->customer?->reference ?? '—' }}</span></div>
-                            <div class="row"><span class="k">Phone</span> <span class="v"
-                                    id="vw_phone">{{ $order?->customer?->phone ?? '—' }}</span></div>
-                            <div class="row"><span class="k">Suit No</span> <span class="v"
-                                    id="vw_order_no">{{ $order?->order_no ?? '—' }}</span></div>
-                            <div class="row"><span class="k">Booking</span> <span class="v"
-                                    id="vw_booking">{{ $order?->booking_date?->format('d/m/Y') ?? '—' }}</span></div>
-                            <div class="row"><span class="k">Delivery</span><span class="v"
-                                    id="vw_delivery">{{ $order?->delivery_date?->format('d/m/Y') ?? '—' }}</span></div>
-                            <div class="row"><span class="k">Price</span> <span class="v"
-                                    id="vw_price">{{ ($order && $order->price > 0) ? 'Rs. ' . number_format($order->price, 0) : '—' }}</span>
-                            </div>
-                            <div class="row"><span class="k">Paid</span> <span class="v"
-                                    id="vw_advance">{{ ($order && $order->advance_paid > 0) ? 'Rs. ' . number_format($order->advance_paid, 0) : '—' }}</span>
-                            </div>
-                            <div class="row"><span class="k">Status</span> <span class="v"
-                                    id="vw_status">{{ ucfirst($order?->status ?? '—') }}</span></div>
+            <div class="legacy">
+                {{-- Customer column --}}
+                <div>
+                    {{-- VIEW mode --}}
+                    <div class="cls-view">
+                        <div class="row"><span class="k">Name</span> <span class="v"
+                                id="vw_name">{{ $order?->customer?->name ?? '—' }}</span></div>
+                        <div class="row"><span class="k">S/O</span> <span class="v"
+                                id="vw_ref">{{ $order?->customer?->reference ?? '—' }}</span></div>
+                        <div class="row"><span class="k">Phone</span> <span class="v"
+                                id="vw_phone">{{ $order?->customer?->phone ?? '—' }}</span></div>
+                        <div class="row"><span class="k">Suit No</span> <span class="v"
+                                id="vw_order_no">{{ $order?->order_no ?? '—' }}</span></div>
+                        <div class="row"><span class="k">Booking</span> <span class="v"
+                                id="vw_booking">{{ $order?->booking_date?->format('d/m/Y') ?? '—' }}</span></div>
+                        <div class="row"><span class="k">Delivery</span><span class="v"
+                                id="vw_delivery">{{ $order?->delivery_date?->format('d/m/Y') ?? '—' }}</span></div>
+                        <div class="row"><span class="k">Price</span> <span class="v"
+                                id="vw_price">{{ $order && $order->price > 0 ? 'Rs. ' . number_format($order->price, 0) : '—' }}</span>
                         </div>
-
-                        {{-- EDIT mode (hidden by default) --}}
-                        <div class="cls-edit-fields" style="display:none">
-                            <div class="row"><span class="k">Name</span> <input
-                                    class="cls-input @error('name') is-invalid @enderror" id="ei_name"
-                                    value="{{ $order?->customer?->name }}"></div>
-                            <div class="row"><span class="k">S/O</span> <input class="cls-input" id="ei_ref"
-                                    value="{{ $order?->customer?->reference }}"></div>
-                            <div class="row"><span class="k">Phone</span> <input class="cls-input"
-                                    id="ei_phone" value="{{ $order?->customer?->phone }}"></div>
-                            <div class="row"><span class="k">Suit No</span> <input
-                                    class="cls-input @error('order_no') is-invalid @enderror" id="ei_order_no"
-                                    value="{{ $order?->order_no }}"></div>
-                            <div class="row"><span class="k">Booking</span> <input
-                                    class="cls-input @error('booking_date') is-invalid @enderror" type="date"
-                                    id="ei_booking" value="{{ $order?->booking_date?->format('Y-m-d') }}"></div>
-                            <div class="row"><span class="k">Delivery</span><input
-                                    class="cls-input @error('delivery_date') is-invalid @enderror" type="date"
-                                    id="ei_delivery" value="{{ $order?->delivery_date?->format('Y-m-d') }}"></div>
-                            <div class="row"><span class="k">Price</span> <input
-                                    class="cls-input @error('price') is-invalid @enderror" id="ei_price"
-                                    value="{{ $order?->price }}"></div>
-                            <div class="row"><span class="k">Paid</span> <input
-                                    class="cls-input @error('advance_paid') is-invalid @enderror" id="ei_advance"
-                                    value="{{ $order?->advance_paid }}"></div>
-                            <div class="row"><span class="k">Status</span>
-                                <select class="cls-input cls-select" id="ei_status">
-                                    @foreach (['pending' => 'Pending', 'stitching' => 'Stitching', 'ready' => 'Ready', 'delivered' => 'Delivered', 'returned' => 'Returned', 'cancelled' => 'Cancelled'] as $v => $l)
-                                        <option value="{{ $v }}"
-                                            {{ ($order && $order->status === $v) ? 'selected' : '' }}>
-                                            {{ $l }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
+                        <div class="row"><span class="k">Paid</span> <span class="v"
+                                id="vw_advance">{{ $order && $order->advance_paid > 0 ? 'Rs. ' . number_format($order->advance_paid, 0) : '—' }}</span>
                         </div>
+                        <div class="row"><span class="k">Status</span> <span class="v"
+                                id="vw_status">{{ ucfirst($order?->status ?? '—') }}</span></div>
                     </div>
 
-                    {{-- Waistcoat measurements --}}
-                    <div>
-                        <div class="col-h head-cell" style="margin:-8px -10px 8px;">Waistcoat Size</div>
-                        @foreach ($garmentTypes->firstWhere('code', 'waistcoat')?->measurementPoints ?? [] as $point)
-                            <div class="row">
-                                <span class="k ur">{{ $point->name_ur }}</span>
-                                <span class="cls-view v">{{ $measurements['waistcoat'][$point->code] ?? '—' }}</span>
-                                <input class="cls-edit-fields cls-input num" style="display:none;width:60px"
-                                    id="ei_wc_{{ $point->code }}"
-                                    value="{{ $measurements['waistcoat'][$point->code] ?? '' }}" placeholder="—">
-                            </div>
-                        @endforeach
-                    </div>
-
-                    {{-- Kameez measurements --}}
-                    <div>
-                        <div class="col-h head-cell" style="margin:-8px -10px 8px;">Kameez Size</div>
-                        @foreach ($garmentTypes->firstWhere('code', 'kameez')?->measurementPoints ?? [] as $point)
-                            <div class="row">
-                                <span class="k ur">{{ $point->name_ur }}</span>
-                                <span class="cls-view v">{{ $measurements['kameez'][$point->code] ?? '—' }}</span>
-                                <input class="cls-edit-fields cls-input num" style="display:none;width:60px"
-                                    id="ei_km_{{ $point->code }}"
-                                    value="{{ $measurements['kameez'][$point->code] ?? '' }}" placeholder="—">
-                            </div>
-                        @endforeach
-                    </div>
-
-                    {{-- Design options --}}
-                    <div>
-                        <div class="col-h head-cell" style="margin:-8px -10px 8px;">Design</div>
-
-                        @foreach ($designOptions->get('stitch', collect()) as $opt)
-                            @if ($opt->code === 'zanjeeri')
-                                <div class="chk">
-                                    <i
-                                        class="{{ in_array($opt->id, $selectedOptionIds) ? 'on' : '' }}">{{ in_array($opt->id, $selectedOptionIds) ? '✓' : '' }}</i>
-                                    <span class="ur">{{ $opt->name_ur }}</span>
-                                </div>
-                            @endif
-                        @endforeach
-
-                        @foreach ($designOptions->get('cuff_kaaj', collect()) as $opt)
-                            <div class="chk">
-                                <i
-                                    class="{{ in_array($opt->id, $selectedOptionIds) ? 'on' : '' }}">{{ in_array($opt->id, $selectedOptionIds) ? '✓' : '' }}</i>
-                                <span class="ur">{{ $opt->name_ur }}</span>
-                            </div>
-                        @endforeach
-
-                        @foreach ($designOptions->get('extra', collect()) as $opt)
-                            @if (in_array($opt->code, ['shalwar_pocket', 'no_name', 'make_drawing']))
-                                <div class="chk">
-                                    <i
-                                        class="{{ in_array($opt->id, $selectedOptionIds) ? 'on' : '' }}">{{ in_array($opt->id, $selectedOptionIds) ? '✓' : '' }}</i>
-                                    <span class="ur">{{ $opt->name_ur }}</span>
-                                </div>
-                            @endif
-                        @endforeach
-
-                        @foreach ($designOptions->get('button', collect()) as $opt)
-                            <div class="chk">
-                                <i
-                                    class="{{ in_array($opt->id, $selectedOptionIds) ? 'on' : '' }}">{{ in_array($opt->id, $selectedOptionIds) ? '✓' : '' }}</i>
-                                <span class="ur">{{ $opt->name_ur }}</span>
-                            </div>
-                        @endforeach
-
+                    {{-- EDIT mode (hidden by default) --}}
+                    <div class="cls-edit-fields" style="display:none">
+                        <div class="row"><span class="k">Name</span> <input
+                                class="cls-input @error('name') is-invalid @enderror" id="ei_name"
+                                value="{{ $order?->customer?->name }}"></div>
+                        <div class="row"><span class="k">S/O</span> <input class="cls-input" id="ei_ref"
+                                value="{{ $order?->customer?->reference }}"></div>
+                        <div class="row"><span class="k">Phone</span> <input class="cls-input" id="ei_phone"
+                                value="{{ $order?->customer?->phone }}"></div>
+                        <div class="row"><span class="k">Suit No</span> <input
+                                class="cls-input @error('order_no') is-invalid @enderror" id="ei_order_no"
+                                value="{{ $order?->order_no }}"></div>
+                        <div class="row"><span class="k">Booking</span> <input
+                                class="cls-input @error('booking_date') is-invalid @enderror" type="date"
+                                id="ei_booking" value="{{ $order?->booking_date?->format('Y-m-d') }}"></div>
+                        <div class="row"><span class="k">Delivery</span><input
+                                class="cls-input @error('delivery_date') is-invalid @enderror" type="date"
+                                id="ei_delivery" value="{{ $order?->delivery_date?->format('Y-m-d') }}"></div>
+                        <div class="row"><span class="k">Price</span> <input
+                                class="cls-input @error('price') is-invalid @enderror" id="ei_price"
+                                value="{{ $order?->price }}"></div>
+                        <div class="row"><span class="k">Paid</span> <input
+                                class="cls-input @error('advance_paid') is-invalid @enderror" id="ei_advance"
+                                value="{{ $order?->advance_paid }}"></div>
+                        <div class="row"><span class="k">Status</span>
+                            <select class="cls-input cls-select" id="ei_status">
+                                @foreach (['pending' => 'Pending', 'stitching' => 'Stitching', 'ready' => 'Ready', 'delivered' => 'Delivered', 'returned' => 'Returned', 'cancelled' => 'Cancelled'] as $v => $l)
+                                    <option value="{{ $v }}"
+                                        {{ $order && $order->status === $v ? 'selected' : '' }}>
+                                        {{ $l }}</option>
+                                @endforeach
+                            </select>
+                        </div>
                     </div>
                 </div>
 
-            </div>{{-- /classic --}}
+                {{-- Waistcoat measurements --}}
+                <div>
+                    <div class="col-h head-cell" style="margin:-8px -10px 8px;">Waistcoat Size</div>
+                    @foreach ($garmentTypes->firstWhere('code', 'waistcoat')?->measurementPoints ?? [] as $point)
+                        <div class="row">
+                            <span class="k ur">{{ $point->name_ur }}</span>
+                            <span class="cls-view v">{{ $measurements['waistcoat'][$point->code] ?? '—' }}</span>
+                            <input class="cls-edit-fields cls-input num" style="display:none;width:60px"
+                                id="ei_wc_{{ $point->code }}"
+                                value="{{ $measurements['waistcoat'][$point->code] ?? '' }}" placeholder="—">
+                        </div>
+                    @endforeach
+                </div>
 
-            {{-- Delete form (hidden, triggered by JS) --}}
-            <form id="deleteForm" method="POST" action="{{ $order ? route('orders.destroy', $order->id) : '#' }}"
-                style="display:none">
-                @csrf
-                @method('DELETE')
-            </form>
+                {{-- Kameez measurements --}}
+                <div>
+                    <div class="col-h head-cell" style="margin:-8px -10px 8px;">Kameez Size</div>
+                    @foreach ($garmentTypes->firstWhere('code', 'kameez')?->measurementPoints ?? [] as $point)
+                        <div class="row">
+                            <span class="k ur">{{ $point->name_ur }}</span>
+                            <span class="cls-view v">{{ $measurements['kameez'][$point->code] ?? '—' }}</span>
+                            <input class="cls-edit-fields cls-input num" style="display:none;width:60px"
+                                id="ei_km_{{ $point->code }}" value="{{ $measurements['kameez'][$point->code] ?? '' }}"
+                                placeholder="—">
+                        </div>
+                    @endforeach
+                </div>
+
+                {{-- Design options --}}
+                <div>
+                    <div class="col-h head-cell" style="margin:-8px -10px 8px;">Design</div>
+
+                    @foreach ($designOptions->get('stitch', collect()) as $opt)
+                        @if ($opt->code === 'zanjeeri')
+                            <div class="chk">
+                                <i
+                                    class="{{ in_array($opt->id, $selectedOptionIds) ? 'on' : '' }}">{{ in_array($opt->id, $selectedOptionIds) ? '✓' : '' }}</i>
+                                <span class="ur">{{ $opt->name_ur }}</span>
+                            </div>
+                        @endif
+                    @endforeach
+
+                    @foreach ($designOptions->get('cuff_kaaj', collect()) as $opt)
+                        <div class="chk">
+                            <i
+                                class="{{ in_array($opt->id, $selectedOptionIds) ? 'on' : '' }}">{{ in_array($opt->id, $selectedOptionIds) ? '✓' : '' }}</i>
+                            <span class="ur">{{ $opt->name_ur }}</span>
+                        </div>
+                    @endforeach
+
+                    @foreach ($designOptions->get('extra', collect()) as $opt)
+                        @if (in_array($opt->code, ['shalwar_pocket', 'no_name', 'make_drawing']))
+                            <div class="chk">
+                                <i
+                                    class="{{ in_array($opt->id, $selectedOptionIds) ? 'on' : '' }}">{{ in_array($opt->id, $selectedOptionIds) ? '✓' : '' }}</i>
+                                <span class="ur">{{ $opt->name_ur }}</span>
+                            </div>
+                        @endif
+                    @endforeach
+
+                    @foreach ($designOptions->get('button', collect()) as $opt)
+                        <div class="chk">
+                            <i
+                                class="{{ in_array($opt->id, $selectedOptionIds) ? 'on' : '' }}">{{ in_array($opt->id, $selectedOptionIds) ? '✓' : '' }}</i>
+                            <span class="ur">{{ $opt->name_ur }}</span>
+                        </div>
+                    @endforeach
+
+                </div>
+            </div>
+
+        </div>{{-- /classic --}}
+
+        {{-- Delete form (hidden, triggered by JS) --}}
+        <form id="deleteForm" method="POST" action="{{ $order ? route('orders.destroy', $order->id) : '#' }}"
+            style="display:none">
+            @csrf
+            @method('DELETE')
+        </form>
 
     </main>
 

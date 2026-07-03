@@ -7,8 +7,6 @@
             <button id="btnModern" class="on" onclick="setView('modern')">Modern view</button>
             <button id="btnClassic" onclick="setView('classic')">Classic (old system)</button>
         </div>
-        <span class="hint"><b>Search Customer</b> — search by customer number, then view &amp; edit the exact
-            order you need. This page cannot create a new order.</span>
     </div>
 
     <main>
@@ -16,9 +14,9 @@
         {{-- Customer # search bar --}}
         <form method="GET" action="{{ route('orders.searchOrder') }}" class="searchbar" id="customerSearch">
             <div class="field">
-                <label>Search by Customer #</label>
-                <input type="number" min="1" name="cn" placeholder="e.g. 1" value="{{ $cn ?? '' }}"
-                    autofocus>
+                <label>Search by Customer Number</label>
+                <input type="number" min="1" name="cn" placeholder="Enter Customer Number"
+                    value="{{ $cn ?? '' }}" autofocus>
             </div>
             <button type="submit" class="btn btn-ghost">Find Customer</button>
         </form>
@@ -39,9 +37,7 @@
             </div>
         @endif
 
-        {{-- ── Customer summary: name, order count, amounts, and a list of ── --}}
-        {{-- their orders — each with an Edit button that opens that exact ── --}}
-        {{-- order below for updating.                                     ── --}}
+        {{-- ── Customer summary: name, order count, amounts --}}
         @if (($cn ?? '') !== '')
             @if ($customerSummary && $customerSummary['found'])
                 @php
@@ -59,18 +55,11 @@
                     <div class="cp-info">
                         <div class="cp-name-row">
                             <span class="cp-name">{{ $c->name }}</span>
-                            <span class="cp-badge">Customer #{{ $c->id }}</span>
                         </div>
                         @if ($c->phone || $c->reference)
                             <div class="cp-sub">
                                 @if ($c->phone)
                                     <span class="num">{{ $c->phone }}</span>
-                                @endif
-                                @if ($c->phone && $c->reference)
-                                    <span class="dot">·</span>
-                                @endif
-                                @if ($c->reference)
-                                    <span>{{ $c->reference }}</span>
                                 @endif
                             </div>
                         @endif
@@ -147,15 +136,14 @@
             @if (($cn ?? '') === '')
                 {{-- No order loaded: nothing searched yet --}}
                 <div class="customer-lookup-panel" style="margin-top:4px;">
-                    <div class="clp-empty">Enter a customer number above to see their orders, then hit Edit on the
-                        one you want to update.</div>
+
                 </div>
             @endif
         @else
-            {{-- ============ MODERN VIEW ============ --}}
+            {{-- MODERN VIEW --}}
             <div id="modern">
 
-                {{-- ── Order form (UPDATE ONLY — never creates a new order) ── --}}
+                {{-- Order form --}}
                 <form method="POST" action="{{ route('orders.update', $order->id) }}" id="orderForm">
                     @method('PUT')
                     @csrf
@@ -163,7 +151,7 @@
 
                     <div class="sheet" id="c-order">
 
-                        {{-- COL 1 — Customer --}}
+                        {{-- COL 1 Customer --}}
                         <div class="col">
                             <div class="col-head">
                                 <svg class="ci">

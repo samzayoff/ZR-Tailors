@@ -2,14 +2,13 @@
 
 @section('content')
 
+
     {{-- View toggle strip --}}
     <div class="strip">
         <div class="toggle">
             <button id="btnModern" class="on" onclick="setView('modern')">Modern view</button>
             <button id="btnClassic" onclick="setView('classic')">Classic (old system)</button>
         </div>
-        <span class="hint">Horizontal worksheet — customer, measurements &amp; design side by side. Stacks on
-            mobile.</span>
     </div>
 
     <main>
@@ -33,8 +32,7 @@
                 </div>
             @endif
 
-            {{-- ── Order form — always creates a NEW order. Updating an ── --}}
-            {{-- existing order only happens on the separate Update System page. ── --}}
+            {{-- ─Order form for New order --}}
             <form method="POST" action="{{ route('orders.store') }}" id="orderForm">
                 @csrf
 
@@ -50,9 +48,7 @@
                         </div>
                         <div class="col-body">
                             <div class="cf">
-                                <label>Customer # <span
-                                        style="font-weight:400;text-transform:none;color:var(--muted);">(load an existing
-                                        customer's details &amp; last measurements)</span></label>
+                                <label>Customer # </label>
                                 <div style="display:flex;gap:8px;">
                                     <input class="txt" type="number" min="1" id="customerLookupNo"
                                         placeholder="e.g. 1" style="flex:1;">
@@ -562,13 +558,7 @@
 
 @push('scripts')
     <script>
-        // ── Customer # lookup — loads directly into this order's fields ──
-        // Fetches an existing customer and fills their Name / S-O Reference /
-        // Phone, plus their last order's measurements straight into the
-        // Kameez & Waistcoat measurement inputs on THIS order. Values land in
-        // their normal fields (not a separate panel) and stay fully editable
-        // afterwards. Price and Paid are never touched — this order's amounts
-        // always stay independent of the customer's past orders.
+        // ── Customer # lookup — 
         (function() {
             var input = document.getElementById('customerLookupNo');
             var btn = document.getElementById('customerLookupBtn');
@@ -628,11 +618,10 @@
                 });
 
                 if (filledCount > 0) {
-                    showStatus('Loaded ' + (data.name || 'customer') +
-                        ' — name, reference & last measurements applied. You can still edit anything.', false);
+                    showStatus('Loaded ' + (data.name || 'customer') + ', measurements applied.', false);
                 } else {
                     showStatus('Loaded ' + (data.name || 'customer') +
-                        ' — no previous measurements on file, so only name/reference were filled.', false);
+                        ' — no previous measurements on file', false);
                 }
             }
 
@@ -745,7 +734,6 @@
         }
 
         // If we were sent here from the dashboard's "Edit" button
-        // (?edit=1), jump straight into edit mode instead of view mode.
         @if ($order)
             if (new URLSearchParams(window.location.search).get('edit') === '1' && document.getElementById('clsEditBtn')) {
                 classicEdit();

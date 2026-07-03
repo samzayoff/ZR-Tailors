@@ -27,15 +27,13 @@ class OrderController
         return view('orders.form', $this->viewData());
     }
 
-    // ── search-only page: view & update an existing order, never create a new one
+    // ── search-only page: 
     public function searchOrder(Request $request): View
     {
         $q  = trim($request->input('q', ''));
         $cn = trim($request->input('cn', ''));
 
-        // Customer-number search: pull the customer + a summary of ALL their
-        // orders (counts, amounts) so staff can see everything at a glance
-        // before choosing which specific order to edit.
+        // Customer-number search
         $customerSummary = null;
         if ($cn !== '') {
             $customer = ctype_digit($cn) ? Customer::find((int) $cn) : null;
@@ -80,8 +78,7 @@ class OrderController
         ));
     }
 
-    // ── update-only page: search by SUIT NUMBER (or phone) to view & update
-    // an existing order directly — never creates a new one.
+    // ── update-only page
     public function updateOrder(Request $request): View
     {
         $q = trim($request->input('q', ''));
@@ -144,7 +141,6 @@ class OrderController
         });
 
         // Return to whichever update-only page this save was submitted
-        // from — Search Customer or Update Order — never to New Order.
         if ($request->input('return_to') === 'updateOrder') {
             return redirect()->route('orders.updateOrder', ['q' => $order->order_no])
                 ->with('success', 'Order updated successfully.');
@@ -220,13 +216,13 @@ class OrderController
         }
 
         // Re-use customer if phone matches
-        if ($request->filled('phone')) {
-            $customer = Customer::findByPhone($request->input('phone'));
-            if ($customer) {
-                $customer->update($data);
-                return $customer;
-            }
-        }
+        // if ($request->filled('phone')) {
+        //     $customer = Customer::findByPhone($request->input('phone'));
+        //     if ($customer) {
+        //         $customer->update($data);
+        //         return $customer;
+        //     }
+        // }
 
         return Customer::create($data);
     }

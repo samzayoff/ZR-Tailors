@@ -101,11 +101,26 @@
             <button class="menu-btn" id="menuBtn" aria-label="Open menu">&#9776;</button>
             <nav id="nav">
                 <a href="{{ route('orders.searchOrder') }}"
-                    class="key {{ request()->routeIs('orders.searchOrder') ? 'is-active' : '' }}">Search Customer</a>
-                <a href="{{ route('orders.updateOrder') }}"
-                    class="key {{ request()->routeIs('orders.updateOrder') ? 'is-active' : '' }}">Update Order</a>
-                <a href="{{ route('orders.index') }}"
-                    class="key {{ request()->routeIs('orders.index') ? 'is-active' : '' }}">New Order</a>
+                    class="key {{ request()->routeIs('orders.searchOrder') ? 'is-active' : '' }}">Suits Per
+                    Customer</a>
+                <div class="dropdown">
+                    <button
+                        class="key dropdown-btn {{ request()->routeIs('orders.index') || request()->routeIs('orders.updateOrder') ? 'is-active' : '' }}">
+                        Order ▾
+                    </button>
+
+                    <div class="dropdown-content">
+                        <a href="{{ route('orders.index') }}"
+                            class="{{ request()->routeIs('orders.index') ? 'is-active' : '' }}">
+                            New Order
+                        </a>
+
+                        <a href="{{ route('orders.updateOrder') }}"
+                            class="{{ request()->routeIs('orders.updateOrder') ? 'is-active' : '' }}">
+                            Update Order
+                        </a>
+                    </div>
+                </div>
                 <a href="{{ route('dashboard.index') }}"
                     class="key {{ request()->routeIs('dashboard.index') ? 'is-active' : '' }}">Dashboard</a>
                 <a href="{{ route('report.index') }}"
