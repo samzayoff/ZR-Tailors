@@ -23,13 +23,13 @@ class Order extends Model
     ];
 
     protected $casts = [
-        'booking_date'  => 'date',
+        'booking_date' => 'date',
         'delivery_date' => 'date',
-        'price'         => 'decimal:2',
-        'advance_paid'  => 'decimal:2',
+        'price' => 'decimal:2',
+        'advance_paid' => 'decimal:2',
     ];
 
-    // ── Relationships ──────────────────────────────────────────────────
+    // ── Relationships 
 
     public function customer(): BelongsTo
     {
@@ -56,17 +56,15 @@ class Order extends Model
         return $this->hasMany(Payment::class);
     }
 
-    // ── Helpers ────────────────────────────────────────────────────────
-
-   
+    // ── Helpers 
     public function measurementsFor(string $garmentCode): array
     {
         $garment = $this->garments()
-            ->whereHas('garmentType', fn ($q) => $q->where('code', $garmentCode))
+            ->whereHas('garmentType', fn($q) => $q->where('code', $garmentCode))
             ->with('measurements.measurementPoint')
             ->first();
 
-        if (! $garment) {
+        if (!$garment) {
             return [];
         }
 
@@ -91,7 +89,7 @@ class Order extends Model
     public static function nextOrderNo(): string
     {
         $max = self::whereRaw("order_no REGEXP '^[0-9]+$'")->pluck('order_no')
-            ->map(fn ($v) => (int) $v)->max();
-        return $max ? (string)($max + 1) : '1';
+            ->map(fn($v) => (int) $v)->max();
+        return $max ? (string) ($max + 1) : '1';
     }
 }

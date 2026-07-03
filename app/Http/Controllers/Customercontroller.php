@@ -4,18 +4,40 @@ namespace App\Http\Controllers;
 
 use App\Models\Customer;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class CustomerController
 {
-    /**
-     * Look up a customer by their customer number (ID) and return their
-     * name plus the measurements from their most recent order.
-     *
-     * This is read-only / for reference only — it is used to display an
-     * existing customer's last measurements while filling out a NEW order,
-     * without touching (and therefore without affecting) the measurement
-     * fields of the order currently being created or edited.
-     */
+    //  View every current customer
+    public function index(Request $request): View
+    {
+        $search = trim((string) $request->input('q', ''));
+
+        $query = Customer::withCount('orders')
+            ->withSum('orders as total_price', 'price')
+            ->withSum('orders as total_paid', 'advance_paid');
+
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%");
+                //   ->orWhere('phone', 'like', "%{$search}%");
+
+                if (ctype_digit($search)) {
+                    $q->orWhere('id', (int) $search);
+                }
+            });
+        }
+
+        $customers = $query->orderBy('id')->paginate(25)->withQueryString();
+
+        return view('customers.index', [
+            'customers' => $customers,
+            'search'    => $search,
+        ]);
+    }
+
+    //  Lookup a customer by ID (for AJAX)
     public function lookup(int $id): JsonResponse
     {
         $customer = Customer::find($id);
@@ -43,8 +65,7 @@ class CustomerController
                         if ($m->value === null || $m->value === '') {
                             continue;
                         }
-                        // Skip gracefully if the measurement point was deleted/renamed
-                        // instead of throwing on a null relation.
+                        //  if the measurement point was deleted/renamed
                         $label = $m->measurementPoint?->name_en ?? $m->measurementPoint?->code;
                         $code  = $m->measurementPoint?->code;
                         if ($label === null || $code === null) {
@@ -66,9 +87,7 @@ class CustomerController
                 }
             }
         } catch (\Throwable $e) {
-            // Never let a malformed/orphaned measurement row break the lookup —
-            // the customer's core details below are still valid and useful.
-            $garments = [];
+           $garments = [];
         }
 
         return response()->json([

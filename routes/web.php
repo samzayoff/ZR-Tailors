@@ -27,6 +27,9 @@ Route::get('/orders/update', [OrderController::class, 'updateOrder'])->name('ord
 // Customer lookup 
 Route::get('/customers/{id}/lookup', [CustomerController::class, 'lookup'])->name('customers.lookup')->whereNumber('id');
 
+// View all current customers
+Route::get('/customers', [CustomerController::class, 'index'])->name('customers.index');
+
 // Store new order
 Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
 

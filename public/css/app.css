@@ -916,7 +916,8 @@ nav a.is-active { background: rgba(255,255,255,.12); color: #fff; }
   font-family: 'Poppins', system-ui, sans-serif;
   color: var(--brass-soft); text-decoration: none;
   font-size: 13px; font-weight: 500;
-  padding: 7px 11px; border-radius: 8px; white-space: nowrap;
+  padding:11px; border-radius: 7px; white-space: nowrap;
+  /* padding-top: 7px; */
   transition: background .15s, color .15s;
 }
 .dropdown-btn:hover, .dropdown-btn:focus-visible {
@@ -947,3 +948,25 @@ nav a.is-active { background: rgba(255,255,255,.12); color: #fff; }
 .dropdown-content a.is-active {
   background: var(--brass); color: #fff; font-weight: 600;
 }
+/* ── Customer # badge (customers list, links to their suits) ─ */
+.cust-no {
+  display: inline-block; font-family: 'IBM Plex Mono', monospace; font-size: 12px;
+  font-weight: 600; color: var(--brass); text-decoration: none;
+  background: #fdf6e8; border: 1px solid var(--brass-soft); border-radius: 6px;
+  padding: 2px 7px;
+}
+.cust-no:hover { background: var(--brass); color: #fff; }
+
+/* ── Customers list pagination ────────────────────────────── */
+.cust-pagination {
+  display: flex; align-items: center; justify-content: center; gap: 16px;
+  margin-top: 16px; font-size: 13px; color: var(--muted);
+}
+.cp-btn {
+  padding: 7px 14px; border-radius: 8px; border: 1px solid var(--line);
+  background: var(--card); color: var(--ink); text-decoration: none;
+  font-weight: 600; font-size: 13px;
+}
+.cp-btn:hover { background: var(--brass-soft); }
+.cp-btn.cp-disabled { color: var(--muted); opacity: .5; pointer-events: none; }
+.cp-status { white-space: nowrap; }

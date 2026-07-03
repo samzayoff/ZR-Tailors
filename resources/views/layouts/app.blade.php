@@ -100,9 +100,12 @@
             </div>
             <button class="menu-btn" id="menuBtn" aria-label="Open menu">&#9776;</button>
             <nav id="nav">
-                <a href="{{ route('orders.searchOrder') }}"
-                    class="key {{ request()->routeIs('orders.searchOrder') ? 'is-active' : '' }}">Suits Per
-                    Customer</a>
+                <a href="{{ route('dashboard.index') }}"
+                    class="key {{ request()->routeIs('dashboard.index') ? 'is-active' : '' }}">Dashboard</a>
+
+                <a href="{{ route('report.index') }}"
+                    class="key {{ request()->routeIs('report.index') ? 'is-active' : '' }}">Report</a>
+
                 <div class="dropdown">
                     <button
                         class="key dropdown-btn {{ request()->routeIs('orders.index') || request()->routeIs('orders.updateOrder') ? 'is-active' : '' }}">
@@ -121,11 +124,27 @@
                         </a>
                     </div>
                 </div>
-                <a href="{{ route('dashboard.index') }}"
-                    class="key {{ request()->routeIs('dashboard.index') ? 'is-active' : '' }}">Dashboard</a>
-                <a href="{{ route('report.index') }}"
-                    class="key {{ request()->routeIs('report.index') ? 'is-active' : '' }}">Report</a>
-                <a href="#" onclick="window.print();return false;">Print</a>
+
+                <div class="dropdown">
+                    <button
+                        class="key dropdown-btn {{ request()->routeIs('orders.searchOrder') || request()->routeIs('customers.index') ? 'is-active' : '' }}">
+                        Customers ▾
+                    </button>
+
+                    <div class="dropdown-content">
+                        <a href="{{ route('orders.searchOrder') }}"
+                            class="key {{ request()->routeIs('orders.searchOrder') ? 'is-active' : '' }}">Suits Per
+                            Customer</a>
+
+                        <a href="{{ route('customers.index') }}"
+                            class="key {{ request()->routeIs('customers.index') ? 'is-active' : '' }}">Customers</a>
+                    </div>
+                </div>
+                {{-- <a href="#" onclick="window.print();return false;">Print</a> --}}
+
+
+
+
             </nav>
         </div>
     </header>
