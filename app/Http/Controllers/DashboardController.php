@@ -14,8 +14,10 @@ class DashboardController
     {
         $today = Carbon::today();
 
+        // ── Orders booked today (drives "Orders Booked Today") ───────────
         $bookedToday = Order::whereDate('booking_date', $today)->get();
 
+        // ── Actual cash received today (from the payments ledger) ────────
         $collectedToday = Payment::whereDate('paid_at', $today)->sum('amount');
 
         // ── Orders due for delivery today ────────────────────────────────
@@ -28,7 +30,7 @@ class DashboardController
         // ── Outstanding balance across ALL customers (all-time) ──────────
         $outstandingBalance = Order::whereNotIn('status', ['cancelled'])
             ->get()
-            ->sum(fn ($o) => max(0, $o->price - $o->advance_paid));
+            ->sum(fn($o) => max(0, $o->price - $o->advance_paid));
 
         // ── Total customers (all-time) ───────────────────────────────────
         $totalCustomers = Customer::count();
@@ -38,13 +40,13 @@ class DashboardController
 
         $ordersInRange = Order::whereBetween('booking_date', [$rangeStart, $today])
             ->get()
-            ->groupBy(fn ($o) => $o->booking_date->format('Y-m-d'));
+            ->groupBy(fn($o) => Carbon::parse($o->booking_date)->format('Y-m-d'));
 
         // Pulled straight from the payments ledger (paid_at = the real day
         // the money was recorded), not guessed from booking_date.
         $paymentsInRange = Payment::whereBetween('paid_at', [$rangeStart, $today])
             ->get()
-            ->groupBy(fn ($p) => $p->paid_at->format('Y-m-d'));
+            ->groupBy(fn($p) => $p->paid_at->format('Y-m-d'));
 
         $chartLabels = [];
         $chartOrders = [];
@@ -52,23 +54,23 @@ class DashboardController
 
         for ($d = $rangeStart->copy(); $d->lte($today); $d->addDay()) {
             $key = $d->format('Y-m-d');
-            $chartLabels[]    = $d->format('d M');
-            $chartOrders[]    = $ordersInRange->get($key, collect())->count();
+            $chartLabels[] = $d->format('d M');
+            $chartOrders[] = $ordersInRange->get($key, collect())->count();
             $chartCollected[] = $paymentsInRange->get($key, collect())->sum('amount');
         }
 
         return view('dashboard.index', [
-            'todaySales'      => $bookedToday->sum('price'),
-            'todayCollected'  => $collectedToday,
-            'ordersToday'     => $bookedToday->count(),
-            'dueTodayCount'   => $dueToday->count(),
-            'dueBalance'      => $outstandingBalance,
-            'totalCustomers'  => $totalCustomers,
-            'dueOrders'       => $dueToday,
-            'today'           => $today,
-            'chartLabels'     => $chartLabels,
-            'chartOrders'     => $chartOrders,
-            'chartCollected'  => $chartCollected,
+            'todaySales' => $bookedToday->sum('price'),
+            'todayCollected' => $collectedToday,
+            'ordersToday' => $bookedToday->count(),
+            'dueTodayCount' => $dueToday->count(),
+            'dueBalance' => $outstandingBalance,
+            'totalCustomers' => $totalCustomers,
+            'dueOrders' => $dueToday,
+            'today' => $today,
+            'chartLabels' => $chartLabels,
+            'chartOrders' => $chartOrders,
+            'chartCollected' => $chartCollected,
         ]);
     }
 }
