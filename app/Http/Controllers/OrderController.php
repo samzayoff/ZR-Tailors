@@ -21,43 +21,46 @@ use Illuminate\View\View;
 
 class OrderController
 {
-    
-    public function index(): View
+    public function index(Request $request): View
     {
-        return view('orders.form', $this->viewData());
-    }
-
-    // ── search-only page: 
-    public function searchOrder(Request $request): View
-    {
-        $q  = trim($request->input('q', ''));
+        $q = trim($request->input('q', ''));
         $cn = trim($request->input('cn', ''));
 
-        // Customer-number search
+        // Customer-number search — full order history for that customer
         $customerSummary = null;
         if ($cn !== '') {
             $customer = ctype_digit($cn) ? Customer::find((int) $cn) : null;
 
             if ($customer) {
-                $orders = $customer->orders()->latest('id')->get();
+                // Get all orders for summary totals
+                $allOrders = $customer->orders()->latest('id')->get();
+                
+                // Cancelled and returned suits are not completed sales.
+                $sellableOrders = $allOrders->whereNotIn('status', ['cancelled', 'returned']);
+                $totalPrice = (float) $sellableOrders->sum('price');
+                $totalPaid = (float) $allOrders->sum('advance_paid');
 
-                $totalPrice     = (float) $orders->sum('price');
-                $totalPaid      = (float) $orders->sum('advance_paid');
+                // Paginate for the UI
+                $paginatedOrders = $customer->orders()
+                    ->latest('id')
+                    ->paginate(10, ['*'], 'page')
+                    ->withQueryString();
 
                 $customerSummary = [
-                    'found'           => true,
-                    'customer'        => $customer,
-                    'orders'          => $orders,
-                    'orders_count'    => $orders->count(),
-                    'total_price'     => $totalPrice,
-                    'total_paid'      => $totalPaid,
-                    'total_remaining' => $totalPrice - $totalPaid,
+                    'found' => true,
+                    'customer' => $customer,
+                    'orders' => $paginatedOrders,
+                    'orders_count' => $allOrders->count(),
+                    'total_price' => $totalPrice,
+                    'total_paid' => $totalPaid,
+                    'total_remaining' => max(0, $totalPrice - $totalPaid),
                 ];
             } else {
                 $customerSummary = ['found' => false, 'cn' => $cn];
             }
         }
 
+        // Order search (suit number or phone) — loads the order for editing
         $order = null;
         if ($q !== '') {
             $order = Order::with([
@@ -66,38 +69,16 @@ class OrderController
                 'garments.measurements.measurementPoint',
                 'designOptions',
             ])
-            ->where('order_no', $q)
-            ->orWhereHas('customer', fn ($qb) => $qb->where('phone', $q))
-            ->latest()
-            ->first();
+                ->where('order_no', $q)
+                ->orWhereHas('customer', fn($qb) => $qb->where('phone', $q))
+                ->latest()
+                ->first();
         }
 
-        return view('orders.search', array_merge(
+        return view('orders.form', array_merge(
             $this->viewData($order, $q),
             ['cn' => $cn, 'customerSummary' => $customerSummary]
         ));
-    }
-
-    // ── update-only page
-    public function updateOrder(Request $request): View
-    {
-        $q = trim($request->input('q', ''));
-
-        $order = null;
-        if ($q !== '') {
-            $order = Order::with([
-                'customer',
-                'garments.garmentType',
-                'garments.measurements.measurementPoint',
-                'designOptions',
-            ])
-            ->where('order_no', $q)
-            ->orWhereHas('customer', fn ($qb) => $qb->where('phone', $q))
-            ->latest()
-            ->first();
-        }
-
-        return view('orders.update', $this->viewData($order, $q));
     }
 
     // store new order
@@ -106,13 +87,13 @@ class OrderController
         $order = null;
         DB::transaction(function () use ($request, &$order) {
             $customer = $this->upsertCustomer($request);
-            $order    = $this->createOrder($request, $customer);
+            $order = $this->createOrder($request, $customer);
             $this->syncMeasurements($request, $order);
             $this->syncDesignOptions($request, $order);
             $this->recordPaymentDelta($order, 0, (float) $order->advance_paid);
         });
 
-        return redirect()->route('orders.searchOrder', ['q' => $order->order_no])
+        return redirect()->route('orders.index', ['q' => $order->order_no])
             ->with('success', 'Order saved successfully.');
     }
 
@@ -124,29 +105,23 @@ class OrderController
 
             $customer = $this->upsertCustomer($request, $order->customer);
             $order->update([
-                'customer_id'   => $customer->id,
-                'order_no'      => $request->input('order_no', $order->order_no),
-                'booking_date'  => $this->parseDate($request->input('booking_date')),
+                'customer_id' => $customer->id,
+                'order_no' => $request->input('order_no', $order->order_no),
+                'booking_date' => $this->parseDate($request->input('booking_date')),
                 'delivery_date' => $this->parseDate($request->input('delivery_date')),
-                'quantity'      => $request->input('quantity', 1),
-                'price'         => $request->input('price', 0),
-                'advance_paid'  => $request->input('advance_paid', 0),
-                'colour_note'   => $request->input('colour_note'),
-                'extra_notes'   => $request->input('extra_notes'),
-                'status'        => $request->input('status', $order->status),
+                'quantity' => $request->input('quantity', 1),
+                'price' => $request->input('price', 0),
+                'advance_paid' => $request->input('advance_paid', 0),
+                'colour_note' => $request->input('colour_note'),
+                'extra_notes' => $request->input('extra_notes'),
+                'status' => $request->input('status', $order->status),
             ]);
             $this->syncMeasurements($request, $order);
             $this->syncDesignOptions($request, $order);
             $this->recordPaymentDelta($order, $previousAdvance, (float) $order->advance_paid);
         });
 
-        // Return to whichever update-only page this save was submitted
-        if ($request->input('return_to') === 'updateOrder') {
-            return redirect()->route('orders.updateOrder', ['q' => $order->order_no])
-                ->with('success', 'Order updated successfully.');
-        }
-
-        return redirect()->route('orders.searchOrder', ['q' => $order->order_no])
+        return redirect()->route('orders.index', ['q' => $order->order_no])
             ->with('success', 'Order updated successfully.');
     }
 
@@ -176,14 +151,14 @@ class OrderController
     // ── Private helpers
     private function viewData(?Order $order = null, string $searchQuery = ''): array
     {
-        $garmentTypes  = GarmentType::with('measurementPoints')->orderBy('sort_order')->get();
+        $garmentTypes = GarmentType::with('measurementPoints')->orderBy('sort_order')->get();
         $designOptions = DesignOption::orderBy('sort_order')->get()->groupBy('category');
 
         // Selected design option IDs
         $selectedOptionIds = $order ? $order->selectedOptionIds() : [];
 
         // If no order, pre-tick defaults
-        if (! $order) {
+        if (!$order) {
             $selectedOptionIds = DesignOption::where('is_default', true)->pluck('id')->toArray();
         }
 
@@ -205,8 +180,8 @@ class OrderController
     private function upsertCustomer(Request $request, ?Customer $existing = null): Customer
     {
         $data = [
-            'name'      => $request->input('name'),
-            'phone'     => $request->input('phone'),
+            'name' => $request->input('name'),
+            'phone' => $request->input('phone'),
             'reference' => $request->input('reference'),
         ];
 
@@ -215,14 +190,18 @@ class OrderController
             return $existing;
         }
 
-        // Re-use customer if phone matches
-        // if ($request->filled('phone')) {
-        //     $customer = Customer::findByPhone($request->input('phone'));
-        //     if ($customer) {
-        //         $customer->update($data);
-        //         return $customer;
-        //     }
-        // }
+        // Re-use the existing customer record if this phone number already
+        // belongs to someone in the system. Without this, typing in an old
+        // customer's name/phone by hand (instead of using the Customer #
+        // lookup) creates a brand-new duplicate customer every time.
+        $phone = trim((string) $request->input('phone', ''));
+        if ($phone !== '') {
+            $customer = Customer::findByPhone($phone);
+            if ($customer) {
+                $customer->update($data);
+                return $customer;
+            }
+        }
 
         return Customer::create($data);
     }
@@ -244,24 +223,24 @@ class OrderController
         return $date;
     }
 
-  
+
     private function createOrder(Request $request, Customer $customer): Order
     {
         return Order::create([
-            'order_no'      => $request->input('order_no') ?: Order::nextOrderNo(),
-            'customer_id'   => $customer->id,
-            'booking_date'  => $this->parseDate($request->input('booking_date')),
+            'order_no' => $request->input('order_no') ?: Order::nextOrderNo(),
+            'customer_id' => $customer->id,
+            'booking_date' => $this->parseDate($request->input('booking_date')),
             'delivery_date' => $this->parseDate($request->input('delivery_date')),
-            'quantity'      => $request->input('quantity', 1),
-            'price'         => $request->input('price', 0),
-            'advance_paid'  => $request->input('advance_paid', 0),
-            'colour_note'   => $request->input('colour_note'),
-            'extra_notes'   => $request->input('extra_notes'),
-            'status'        => $request->input('status', 'pending'),
+            'quantity' => $request->input('quantity', 1),
+            'price' => $request->input('price', 0),
+            'advance_paid' => $request->input('advance_paid', 0),
+            'colour_note' => $request->input('colour_note'),
+            'extra_notes' => $request->input('extra_notes'),
+            'status' => $request->input('status', 'pending'),
         ]);
     }
 
-    
+
     private function recordPaymentDelta(Order $order, float $previousAdvance, float $newAdvance): void
     {
         $delta = round($newAdvance - $previousAdvance, 2);
@@ -273,9 +252,9 @@ class OrderController
         try {
             Payment::create([
                 'order_id' => $order->id,
-                'amount'   => $delta,
-                'paid_at'  => Carbon::today(),
-                'note'     => $delta > 0 ? 'Advance payment recorded' : 'Advance payment correction',
+                'amount' => $delta,
+                'paid_at' => Carbon::today(),
+                'note' => $delta > 0 ? 'Advance payment recorded' : 'Advance payment correction',
             ]);
         } catch (\Throwable $e) {
             Log::error('Failed to log payment for order #' . $order->id . ': ' . $e->getMessage());
@@ -296,13 +275,13 @@ class OrderController
             }
 
             $gt = $garmentTypes->get($garmentCode);
-            if (! $gt) {
+            if (!$gt) {
                 continue;
             }
 
             // Get or create the order_garment row
             $og = OrderGarment::firstOrCreate([
-                'order_id'        => $order->id,
+                'order_id' => $order->id,
                 'garment_type_id' => $gt->id,
             ], ['quantity' => 1]);
 
@@ -311,13 +290,13 @@ class OrderController
 
             foreach ($values as $code => $value) {
                 $point = $pointMap->get($code);
-                if (! $point) {
+                if (!$point) {
                     continue;
                 }
 
                 OrderMeasurement::updateOrCreate(
                     [
-                        'order_garment_id'    => $og->id,
+                        'order_garment_id' => $og->id,
                         'measurement_point_id' => $point->id,
                     ],
                     ['value' => $value !== '' ? $value : null]
@@ -326,7 +305,7 @@ class OrderController
         }
     }
 
-    
+
     private function syncDesignOptions(Request $request, Order $order): void
     {
         $ids = $request->input('design_options', []);

@@ -1,7 +1,6 @@
 @extends('layouts.app')
 
 @section('content')
-
     <main>
 
         <h1 class="report-title">Customers</h1>
@@ -43,7 +42,7 @@
                         @endphp
                         <tr>
                             <td class="num">
-                                <a href="{{ route('orders.searchOrder', ['cn' => $customer->id]) }}"
+                                <a href="{{ route('orders.index', ['cn' => $customer->id]) }}"
                                     class="cust-no">#{{ $customer->id }}</a>
                             </td>
                             <td>{{ $customer->name }}</td>
@@ -54,8 +53,8 @@
                             <td class="num">Rs {{ number_format($paid, 0) }}</td>
                             <td class="num">Rs {{ number_format($balance, 0) }}</td>
                             <td>
-                                <a href="{{ route('orders.searchOrder', ['cn' => $customer->id]) }}"
-                                    class="row-edit-btn">View Suits</a>
+                                <a href="{{ route('orders.index', ['cn' => $customer->id]) }}" class="row-edit-btn">View
+                                    Suits</a>
                             </td>
                         </tr>
                     @empty
@@ -94,5 +93,4 @@
         @endif
 
     </main>
-
 @endsection

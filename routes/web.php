@@ -8,7 +8,8 @@ use Illuminate\Support\Facades\Route;
 
 
 
-// blank form (new order)
+// Unified order page: add a new order, update an existing one, or search
+// an old customer's history — all from one screen (q = suit#/phone, cn = customer#).
 Route::get('/', [OrderController::class, 'index'])->name('orders.index');
 
 // Dashboard 
@@ -16,13 +17,6 @@ Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard
 
 // Reports (date range + status + payment filters)
 Route::get('/report', [ReportController::class, 'index'])->name('report.index');
-
-// Search Customer page
-// orders only.
-Route::get('/orders/lookup', [OrderController::class, 'searchOrder'])->name('orders.searchOrder');
-
-// Update Order page: 
-Route::get('/orders/update', [OrderController::class, 'updateOrder'])->name('orders.updateOrder');
 
 // Customer lookup 
 Route::get('/customers/{id}/lookup', [CustomerController::class, 'lookup'])->name('customers.lookup')->whereNumber('id');

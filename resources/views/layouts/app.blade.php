@@ -105,59 +105,14 @@
 
                 <a href="{{ route('orders.index') }}"
                     class="{{ request()->routeIs('orders.index') ? 'is-active' : '' }}">
-                    New Order
-                </a>
-
-                <a href="{{ route('orders.updateOrder') }}"
-                    class="{{ request()->routeIs('orders.updateOrder') ? 'is-active' : '' }}">
-                    Update Order
+                    Orders
                 </a>
 
                 <a href="{{ route('report.index') }}"
                     class="key {{ request()->routeIs('report.index') ? 'is-active' : '' }}">Report</a>
 
-                {{-- <a href="{{ route('orders.searchOrder') }}"
-                    class="key {{ request()->routeIs('orders.searchOrder') ? 'is-active' : '' }}">Suits Per
-                    Customer</a> --}}
-
                 <a href="{{ route('customers.index') }}"
                     class="key {{ request()->routeIs('customers.index') ? 'is-active' : '' }}">Customers</a>
-
-
-
-
-                {{-- <div class="dropdown">
-                    <button
-                        class="key dropdown-btn {{ request()->routeIs('orders.index') || request()->routeIs('orders.updateOrder') ? 'is-active' : '' }}">
-                        Order ▾
-                    </button>
-
-                    <div class="dropdown-content">
-                        
-
-                        <a href="{{ route('orders.updateOrder') }}"
-                            class="{{ request()->routeIs('orders.updateOrder') ? 'is-active' : '' }}">
-                            Update Order
-                        </a>
-                    </div>
-                </div> --}}
-
-                {{-- <div class="dropdown">
-                    <button
-                        class="key dropdown-btn {{ request()->routeIs('orders.searchOrder') || request()->routeIs('customers.index') ? 'is-active' : '' }}">
-                        Customers ▾
-                    </button>
-
-                    <div class="dropdown-content">
-                        
-
-                        
-                    </div>
-                </div> --}}
-                {{-- <a href="#" onclick="window.print();return false;">Print</a> --}}
-
-
-
 
             </nav>
         </div>

@@ -21,10 +21,20 @@ class Customer extends Model
     }
 
     /**
-     * Find by phone or return null.
+     * Find by phone or return null. Ignores spaces and dashes so
+     * "0300-1234567" and "0300 1234567" are treated as the same number.
      */
     public static function findByPhone(string $phone): ?self
     {
-        return self::where('phone', $phone)->first();
+        $normalized = preg_replace('/[\s\-]+/', '', $phone);
+
+        if ($normalized === '') {
+            return null;
+        }
+
+        return self::whereRaw(
+            "REPLACE(REPLACE(phone, ' ', ''), '-', '') = ?",
+            [$normalized]
+        )->first();
     }
 }

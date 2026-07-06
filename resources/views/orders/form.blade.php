@@ -13,8 +13,169 @@
 
     <main>
 
+        {{-- ============ FIND / SEARCH BAR ============ --}}
+        <div class="report-header-wrap" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <h1 class="report-title" style="margin:0;">
+                {{ $order ? 'Update Order #' . $order->order_no : 'New Order' }}
+            </h1>
+        </div>
+
+        <div class="find-bars">
+            {{-- Find an order to edit, by suit number or phone --}}
+            <form method="GET" action="{{ route('orders.index') }}" class="searchbar" id="orderSearch">
+                <div class="field">
+                    <label>Find order to edit — Suit # or Phone</label>
+                    <input type="text" name="q" placeholder="Suit Number / Phone Number" value="{{ $searchQuery ?? '' }}">
+                </div>
+                <button type="submit" class="btn btn-ghost">Find Order</button>
+            </form>
+
+            {{-- Find an old customer's full order history, by customer number --}}
+            <form method="GET" action="{{ route('orders.index') }}" class="searchbar" id="customerSearch">
+                <div class="field">
+                    <label>Find old customer — Customer #</label>
+                    <input type="number" min="1" name="cn" placeholder="Enter Customer Number" value="{{ $cn ?? '' }}">
+                </div>
+                <button type="submit" class="btn btn-ghost">Find Customer</button>
+            </form>
+        </div>
+
+        @if ($order)
+            <div class="customer-lookup-panel" style="margin-top:4px;margin-bottom:16px;">
+                <div class="clp-empty" style="color:var(--brass);font-weight:600;">
+                    Showing order #{{ $order->order_no }} for {{ $order->customer->name ?? 'this customer' }} — edit
+                    below and press Save, or <a href="{{ route('orders.index') }}">start a new order</a>.
+                </div>
+            </div>
+        @elseif (($searchQuery ?? '') !== '')
+            <div class="customer-lookup-panel" style="margin-top:4px;margin-bottom:16px;">
+                <div class="clp-empty">No order found for "{{ $searchQuery }}". You can still fill in the form below
+                    to create it as a new order.</div>
+            </div>
+        @endif
+
+        {{-- ── Old customer summary: name, order count, amounts, full order history ── --}}
+        @if (($cn ?? '') !== '')
+            @if ($customerSummary && $customerSummary['found'])
+                @php
+                    $cs = $customerSummary;
+                    $c = $cs['customer'];
+                    $initials = collect(preg_split('/\s+/', trim($c->name)))
+                        ->filter()
+                        ->map(fn($w) => mb_strtoupper(mb_substr($w, 0, 1)))
+                        ->take(2)
+                        ->implode('');
+                @endphp
+
+                <div class="customer-profile-card">
+                    <div class="cp-avatar">{{ $initials ?: '—' }}</div>
+                    <div class="cp-info">
+                        <div class="cp-name-row">
+                            <span class="cp-name">{{ $c->name }}</span>
+                        </div>
+                        @if ($c->phone || $c->reference)
+                            <div class="cp-sub">
+                                @if ($c->phone)
+                                    <span class="num">{{ $c->phone }}</span>
+                                @endif
+                            </div>
+                        @endif
+                    </div>
+                </div>
+
+                <div class="report-summary">
+                    <div class="rs-card">
+                        <span class="rs-k">Orders</span>
+                        <span class="rs-v num">{{ $cs['orders_count'] }}</span>
+                    </div>
+                    <div class="rs-card">
+                        <span class="rs-k">Total value</span>
+                        <span class="rs-v num">Rs {{ number_format($cs['total_price'], 0) }}</span>
+                    </div>
+                    <div class="rs-card">
+                        <span class="rs-k">Collected</span>
+                        <span class="rs-v num">Rs {{ number_format($cs['total_paid'], 0) }}</span>
+                    </div>
+                    <div class="rs-card">
+                        <span class="rs-k">Balance due</span>
+                        <span class="rs-v num">Rs {{ number_format($cs['total_remaining'], 0) }}</span>
+                    </div>
+                </div>
+
+                <div class="report-table-wrap" style="margin-bottom:10px;">
+                    <table class="report-table">
+                        <thead>
+                            <tr>
+                                <th>Suit #</th>
+                                <th>Booking</th>
+                                <th>Delivery</th>
+                                <th>Price</th>
+                                <th>Paid</th>
+                                <th>Balance</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse ($cs['orders'] as $o)
+                                @php $balance = max(0, $o->price - $o->advance_paid); @endphp
+                                <tr>
+                                    <td class="num">{{ $o->order_no }}</td>
+                                    <td class="num">{{ optional($o->booking_date)->format('d M Y') ?? '—' }}</td>
+                                    <td class="num">{{ optional($o->delivery_date)->format('d M Y') ?? '—' }}</td>
+                                    <td class="num">{{ number_format($o->price, 0) }}</td>
+                                    <td class="num">{{ number_format($o->advance_paid, 0) }}</td>
+                                    <td class="num">{{ number_format($balance, 0) }}</td>
+                                    <td><span class="status-pill status-{{ $o->status }}">{{ ucfirst($o->status) }}</span>
+                                    </td>
+                                    <td>
+                                        <a href="{{ route('orders.index', ['q' => $o->order_no]) }}"
+                                            class="row-edit-btn">Edit</a>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="8" class="report-empty">This customer has no orders yet.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+
+                {{-- PAGINATION for customer history --}}
+                @if ($cs['orders']->hasPages())
+                    <div class="cust-pagination" style="margin-bottom:20px;">
+                        @if ($cs['orders']->onFirstPage())
+                            <span class="cp-btn cp-disabled">&larr; Prev</span>
+                        @else
+                            <a href="{{ $cs['orders']->previousPageUrl() }}" class="cp-btn">&larr; Prev</a>
+                        @endif
+
+                        <span class="cp-status">Page {{ $cs['orders']->currentPage() }} of {{ $cs['orders']->lastPage() }}</span>
+
+                        @if ($cs['orders']->hasMorePages())
+                            <a href="{{ $cs['orders']->nextPageUrl() }}" class="cp-btn">Next &rarr;</a>
+                        @else
+                            <span class="cp-btn cp-disabled">Next &rarr;</span>
+                        @endif
+                    </div>
+                @endif
+
+                @if (!$order)
+                    <div style="text-align: center; margin: 30px 0;">
+                        <button type="button" class="btn btn-primary" onclick="showNewOrderForm()">+ Book New Suit for {{ $c->name }}</button>
+                    </div>
+                @endif
+
+            @else
+                <div class="customer-lookup-panel" style="margin-top:4px;margin-bottom:16px;">
+                    <div class="clp-empty">No customer found with number #{{ $customerSummary['cn'] ?? $cn }}.</div>
+                </div>
+            @endif
+        @endif
+
         {{-- ============ MODERN VIEW ============ --}}
-        <div id="modern">
+        <div id="modern" @if(isset($cn) && $cn !== '' && !$order && !old('name')) style="display:none;" @endif>
 
             {{-- Validation errors --}}
             @if ($errors->any())
@@ -32,9 +193,13 @@
                 </div>
             @endif
 
-            {{-- ─Order form for New order --}}
-            <form method="POST" action="{{ route('orders.store') }}" id="orderForm">
+            {{-- ── Order form — creates a new order, or updates the one found above ── --}}
+            <form method="POST" action="{{ $order ? route('orders.update', $order->id) : route('orders.store') }}"
+                id="orderForm">
                 @csrf
+                @if ($order)
+                    @method('PUT')
+                @endif
 
                 <div class="sheet" id="c-order">
 
@@ -365,7 +530,7 @@
 
 
         {{-- ============ CLASSIC VIEW ============ --}}
-        <div class="classic" id="classic">
+        <div class="classic" id="classic" @if(isset($cn) && $cn !== '' && !$order && !old('name')) style="display:none;" @endif>
 
             {{-- Classic action bar --}}
             @if ($order)
@@ -558,6 +723,17 @@
 
 @push('scripts')
     <script>
+        function showNewOrderForm() {
+            var modern = document.getElementById('modern');
+            if (modern) {
+                modern.style.display = 'block';
+                modern.scrollIntoView({ behavior: 'smooth' });
+            }
+            // If they are in classic view, we might want to show that instead, 
+            // but the toggle button handles the preference. 
+            // For now, we just force modern to show the form.
+        }
+
         // ── Customer # lookup — 
         (function() {
             var input = document.getElementById('customerLookupNo');

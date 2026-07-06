@@ -15,7 +15,11 @@ class CustomerController
         $search = trim((string) $request->input('q', ''));
 
         $query = Customer::withCount('orders')
-            ->withSum('orders as total_price', 'price')
+            ->withSum([
+                'orders as total_price' => function ($q) {
+                    $q->whereNotIn('status', ['cancelled', 'returned']);
+                }
+            ], 'price')
             ->withSum('orders as total_paid', 'advance_paid');
 
         if ($search !== '') {
@@ -33,7 +37,7 @@ class CustomerController
 
         return view('customers.index', [
             'customers' => $customers,
-            'search'    => $search,
+            'search' => $search,
         ]);
     }
 
@@ -42,7 +46,7 @@ class CustomerController
     {
         $customer = Customer::find($id);
 
-        if (! $customer) {
+        if (!$customer) {
             return response()->json([
                 'found' => false,
                 'message' => 'No customer found with number #' . $id,
@@ -67,35 +71,35 @@ class CustomerController
                         }
                         //  if the measurement point was deleted/renamed
                         $label = $m->measurementPoint?->name_en ?? $m->measurementPoint?->code;
-                        $code  = $m->measurementPoint?->code;
+                        $code = $m->measurementPoint?->code;
                         if ($label === null || $code === null) {
                             continue;
                         }
                         $points[] = [
-                            'code'  => $code,
+                            'code' => $code,
                             'label' => $label,
                             'value' => $m->value,
                         ];
                     }
-                    if (! empty($points)) {
+                    if (!empty($points)) {
                         $garments[] = [
                             'garment_code' => $garment->garmentType?->code,
-                            'garment'      => $garment->garmentType?->name_en ?? $garment->garmentType?->code ?? 'Garment',
-                            'points'       => $points,
+                            'garment' => $garment->garmentType?->name_en ?? $garment->garmentType?->code ?? 'Garment',
+                            'points' => $points,
                         ];
                     }
                 }
             }
         } catch (\Throwable $e) {
-           $garments = [];
+            $garments = [];
         }
 
         return response()->json([
-            'found'    => true,
-            'id'       => $customer->id,
-            'name'     => $customer->name,
-            'phone'    => $customer->phone,
-            'reference'=> $customer->reference,
+            'found' => true,
+            'id' => $customer->id,
+            'name' => $customer->name,
+            'phone' => $customer->phone,
+            'reference' => $customer->reference,
             'last_order_no' => $lastOrder?->order_no ?? null,
             'garments' => $garments,
         ]);

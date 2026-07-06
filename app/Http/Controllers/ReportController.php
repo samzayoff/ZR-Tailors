@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
 use Illuminate\View\View;
 
@@ -11,6 +12,9 @@ class ReportController
 {
     
     private const STATUSES = ['pending', 'stitching', 'delivered', 'returned', 'cancelled'];
+
+    // Cancelled and returned suits are not completed sales — excluded from sales totals.
+    private const EXCLUDED_SALE_STATUSES = ['cancelled', 'returned'];
 
     
     private const PAYMENT_STATUSES = ['paid', 'unpaid', 'partial'];
@@ -98,22 +102,54 @@ class ReportController
             $query->orderBy('booking_date', $sortDir);
         }
 
-        $orders = $query->get();
+        // ── Pagination ───────────────────────────────────────────────────
+        $perPage     = 10;
+        $currentPage = (int) $request->input('page', 1);
 
-        // For balance sort, re-sort in memory
         if ($sortBy === 'balance') {
-            $orders = $sortDir === 'asc'
-                ? $orders->sortBy(fn ($o) => max(0, floatval($o->price) - floatval($o->advance_paid)))
-                : $orders->sortByDesc(fn ($o) => max(0, floatval($o->price) - floatval($o->advance_paid)));
-        }
+            // Balance sort must be done in memory; paginate manually.
+            $allOrders = $query->get();
 
-        // ── Summary numbers ──────────────────────────────────────────────
-        $summary = [
-            'count'     => $orders->count(),
-            'total'     => $orders->sum('price'),
-            'collected' => $orders->sum('advance_paid'),
-            'due'       => $orders->sum(fn ($o) => max(0, $o->price - $o->advance_paid)),
-        ];
+            $allOrders = $sortDir === 'asc'
+                ? $allOrders->sortBy(fn ($o) => max(0, floatval($o->price) - floatval($o->advance_paid)))
+                : $allOrders->sortByDesc(fn ($o) => max(0, floatval($o->price) - floatval($o->advance_paid)));
+
+            $allOrders = $allOrders->values(); // re-index after sort
+
+            // Summary is computed from ALL matching records
+            $sellableAll = $allOrders->whereNotIn('status', self::EXCLUDED_SALE_STATUSES);
+            $summary = [
+                'count'     => $allOrders->count(),
+                'total'     => $sellableAll->sum('price'),
+                'collected' => $allOrders->sum('advance_paid'),
+                'due'       => $sellableAll->sum(fn ($o) => max(0, $o->price - $o->advance_paid)),
+            ];
+
+            $orders = new LengthAwarePaginator(
+                $allOrders->slice(($currentPage - 1) * $perPage, $perPage),
+                $allOrders->count(),
+                $perPage,
+                $currentPage,
+                ['path' => $request->url(), 'query' => $request->query()]
+            );
+        } else {
+            // For DB-level sorts we can paginate with a single efficient query.
+            // We still need the full aggregate for the summary cards, so run a
+            // lightweight aggregate query in parallel.
+            $allForSummary = $query->get();
+            $sellableAll   = $allForSummary->whereNotIn('status', self::EXCLUDED_SALE_STATUSES);
+
+            $summary = [
+                'count'     => $allForSummary->count(),
+                'total'     => $sellableAll->sum('price'),
+                'collected' => $allForSummary->sum('advance_paid'),
+                'due'       => $sellableAll->sum(fn ($o) => max(0, $o->price - $o->advance_paid)),
+            ];
+
+            // Re-run the same query for paginated results
+            $orders = $query->paginate($perPage, ['*'], 'page', $currentPage)
+                            ->withQueryString();
+        }
 
         return view('reports.index', [
             'orders'           => $orders,
