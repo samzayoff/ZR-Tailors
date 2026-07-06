@@ -774,7 +774,8 @@ nav a.is-active { background: rgba(255,255,255,.12); color: #fff; }
 .dash-grid-charts { display: flex; flex-direction: column; gap: 16px; }
 .dash-chart-card {
   background: var(--card);
-  background: var(--card); border: 2px solid var(--ink-deep);
+  background: var(--card); 
+  border: 2px solid var(--ink-deep);
   border-radius: var(--radius); box-shadow: var(--shadow);
   padding: 16px;
 }

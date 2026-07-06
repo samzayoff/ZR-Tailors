@@ -127,7 +127,7 @@
                 </div>
             @else
                 <div class="customer-lookup-panel" style="margin-top:4px;margin-bottom:16px;">
-                    <div class="clp-empty">No customer found with number #{{ $customerSummary['cn'] ?? $cn }}.</div>
+                    <div class="clp-empty">No customer found with number {{ $customerSummary['cn'] ?? $cn }}.</div>
                 </div>
             @endif
         @endif

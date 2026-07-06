@@ -14,7 +14,8 @@
     <main>
 
         {{-- ============ FIND / SEARCH BAR ============ --}}
-        <div class="report-header-wrap" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <div class="report-header-wrap"
+            style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
             <h1 class="report-title" style="margin:0;">
                 {{ $order ? 'Update Order #' . $order->order_no : 'New Order' }}
             </h1>
@@ -25,7 +26,8 @@
             <form method="GET" action="{{ route('orders.index') }}" class="searchbar" id="orderSearch">
                 <div class="field">
                     <label>Find order to edit — Suit # or Phone</label>
-                    <input type="text" name="q" placeholder="Suit Number / Phone Number" value="{{ $searchQuery ?? '' }}">
+                    <input type="text" name="q" placeholder="Suit Number / Phone Number"
+                        value="{{ $searchQuery ?? '' }}">
                 </div>
                 <button type="submit" class="btn btn-ghost">Find Order</button>
             </form>
@@ -34,7 +36,8 @@
             <form method="GET" action="{{ route('orders.index') }}" class="searchbar" id="customerSearch">
                 <div class="field">
                     <label>Find old customer — Customer #</label>
-                    <input type="number" min="1" name="cn" placeholder="Enter Customer Number" value="{{ $cn ?? '' }}">
+                    <input type="number" min="1" name="cn" placeholder="Enter Customer Number"
+                        value="{{ $cn ?? '' }}">
                 </div>
                 <button type="submit" class="btn btn-ghost">Find Customer</button>
             </form>
@@ -43,8 +46,8 @@
         @if ($order)
             <div class="customer-lookup-panel" style="margin-top:4px;margin-bottom:16px;">
                 <div class="clp-empty" style="color:var(--brass);font-weight:600;">
-                    Showing order #{{ $order->order_no }} for {{ $order->customer->name ?? 'this customer' }} — edit
-                    below and press Save, or <a href="{{ route('orders.index') }}">start a new order</a>.
+                    Showing order {{ $order->order_no }} by {{ $order->customer->name ?? 'this customer' }}. Edit
+                    below and press Save, or <a href="{{ route('orders.index') }}">Start a <bold>New Order</bold></a>.
                 </div>
             </div>
         @elseif (($searchQuery ?? '') !== '')
@@ -126,7 +129,8 @@
                                     <td class="num">{{ number_format($o->price, 0) }}</td>
                                     <td class="num">{{ number_format($o->advance_paid, 0) }}</td>
                                     <td class="num">{{ number_format($balance, 0) }}</td>
-                                    <td><span class="status-pill status-{{ $o->status }}">{{ ucfirst($o->status) }}</span>
+                                    <td><span
+                                            class="status-pill status-{{ $o->status }}">{{ ucfirst($o->status) }}</span>
                                     </td>
                                     <td>
                                         <a href="{{ route('orders.index', ['q' => $o->order_no]) }}"
@@ -151,7 +155,8 @@
                             <a href="{{ $cs['orders']->previousPageUrl() }}" class="cp-btn">&larr; Prev</a>
                         @endif
 
-                        <span class="cp-status">Page {{ $cs['orders']->currentPage() }} of {{ $cs['orders']->lastPage() }}</span>
+                        <span class="cp-status">Page {{ $cs['orders']->currentPage() }} of
+                            {{ $cs['orders']->lastPage() }}</span>
 
                         @if ($cs['orders']->hasMorePages())
                             <a href="{{ $cs['orders']->nextPageUrl() }}" class="cp-btn">Next &rarr;</a>
@@ -163,10 +168,10 @@
 
                 @if (!$order)
                     <div style="text-align: center; margin: 30px 0;">
-                        <button type="button" class="btn btn-primary" onclick="showNewOrderForm()">+ Book New Suit for {{ $c->name }}</button>
+                        <button type="button" class="btn btn-primary" onclick="showNewOrderForm()">+ Book New Suit for
+                            {{ $c->name }}</button>
                     </div>
                 @endif
-
             @else
                 <div class="customer-lookup-panel" style="margin-top:4px;margin-bottom:16px;">
                     <div class="clp-empty">No customer found with number #{{ $customerSummary['cn'] ?? $cn }}.</div>
@@ -175,7 +180,7 @@
         @endif
 
         {{-- ============ MODERN VIEW ============ --}}
-        <div id="modern" @if(isset($cn) && $cn !== '' && !$order && !old('name')) style="display:none;" @endif>
+        <div id="modern" @if (isset($cn) && $cn !== '' && !$order && !old('name')) style="display:none;" @endif>
 
             {{-- Validation errors --}}
             @if ($errors->any())
@@ -530,7 +535,7 @@
 
 
         {{-- ============ CLASSIC VIEW ============ --}}
-        <div class="classic" id="classic" @if(isset($cn) && $cn !== '' && !$order && !old('name')) style="display:none;" @endif>
+        <div class="classic" id="classic" @if (isset($cn) && $cn !== '' && !$order && !old('name')) style="display:none;" @endif>
 
             {{-- Classic action bar --}}
             @if ($order)
@@ -727,7 +732,9 @@
             var modern = document.getElementById('modern');
             if (modern) {
                 modern.style.display = 'block';
-                modern.scrollIntoView({ behavior: 'smooth' });
+                modern.scrollIntoView({
+                    behavior: 'smooth'
+                });
             }
             // If they are in classic view, we might want to show that instead, 
             // but the toggle button handles the preference. 
