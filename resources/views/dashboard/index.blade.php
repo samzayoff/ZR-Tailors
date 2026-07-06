@@ -4,133 +4,130 @@
     <main>
 
         <center>
-            <h1>Dashboard </h1>
-        </center>
-        <h1 class="report-title">Date Today: {{ $today->format('d M Y') }}</h1>
+            <h1 class="report-title">Dashboard(Date Today: {{ $today->format('d M Y') }}) </h1>
+            {{-- </center>
+        <h1 >Date Today: {{ $today->format('d M Y') }}</h1> --}}
 
-        {{-- TODAY'S STAT CARDS --}}
-        <div class="report-summary dash-summary dash-summary-6">
+            {{-- TODAY'S STAT CARDS --}}
+            <div class="report-summary dash-summary dash-summary-6">
 
-            <div class="rs-card">
-                <span class="rs-k">Today's Orders</span>
-                <span class="rs-v num">{{ $ordersToday }}</span>
-            </div>
-            <div class="rs-card">
-                <span class="rs-k">Due Today</span>
-                <span class="rs-v num">{{ $dueTodayCount }}</span>
-            </div>
-            <div class="rs-card">
-                <span class="rs-k">Total Due Orders</span>
-                <span class="rs-v num">{{ $totalDueOrders }}</span>
-            </div>
-            <div class="rs-card">
-                <span class="rs-k">Today's Sales</span>
-                <span class="rs-v num">Rs {{ number_format($todaySales, 0) }}</span>
-            </div>
-            <div class="rs-card">
-                <span class="rs-k">Total Sales</span>
-                <span class="rs-v num">Rs {{ number_format($totalSales, 0) }}</span>
-            </div>
-            <div class="rs-card">
-                <span class="rs-k">Total Due Amount</span>
-                <span class="rs-v num">Rs {{ number_format($dueBalance, 0) }}</span>
-            </div>
+                <div class="rs-card">
+                    <span class="rs-k">Today's Orders</span>
+                    <span class="rs-v num">{{ $ordersToday }}</span>
+                </div>
+                <div class="rs-card">
+                    <span class="rs-k">Due Today</span>
+                    <span class="rs-v num">{{ $dueTodayCount }}</span>
+                </div>
+                <div class="rs-card">
+                    <span class="rs-k">Total Due Orders</span>
+                    <span class="rs-v num">{{ $totalDueOrders }}</span>
+                </div>
+                <div class="rs-card">
+                    <span class="rs-k">Today's Sales</span>
+                    <span class="rs-v num">Rs {{ number_format($todaySales, 0) }}</span>
+                </div>
+                <div class="rs-card">
+                    <span class="rs-k">Total Sales Last Month</span>
+                    <span class="rs-v num">Rs {{ number_format($totalSales, 0) }}</span>
+                </div>
+                <div class="rs-card">
+                    <span class="rs-k">Total Due Amount</span>
+                    <span class="rs-v num">Rs {{ number_format($dueBalance, 0) }}</span>
+                </div>
 
-        </div>
-        {{-- MAIN BODY GRID: Orders (left) | Charts (right) --}}
-        <div class="dash-grid">
+            </div>
+            {{-- MAIN BODY GRID: Orders (left) | Charts (right) --}}
+            <div class="dash-grid">
 
-            {{-- LEFT: Orders worklist --}}
-            <div class="dash-grid-orders">
+                {{-- LEFT: Orders worklist --}}
+                <div class="dash-grid-orders">
 
-                <div class="report-table-wrap">
-                    <table class="report-table order-worklist">
-                        <thead>
-                            <tr>
-                                <th>Suit #</th>
-                                <th>Customer</th>
-                                {{-- <th>Phone</th> --}}
-                                <th>Due Date</th>
-                                {{-- <th>Balance</th> --}}
-                                <th>Status</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse ($pendingOrders as $order)
-                                @php $balance = max(0, $order->price - $order->advance_paid); @endphp
-                                <tr class="due-row due-row--{{ $order->due_state }}">
-                                    <td class="num">{{ $order->order_no }}</td>
-                                    <td class="cust-name">{{ $order->customer->name ?? '—' }}</td>
-                                    {{-- <td class="num">{{ $order->customer->phone ?? '—' }}</td> --}}
-                                    <td class="num">
-                                        <span class="due-badge due-badge--{{ $order->due_state }}">
-                                            @if ($order->due_state === 'overdue')
-                                                Late
-                                            @elseif ($order->due_state === 'today')
-                                                Today
-                                            @else
-                                                Upcoming
-                                            @endif
-                                        </span>
-                                        {{ optional($order->delivery_date)->format('d M Y') ?? '—' }}
-                                    </td>
-                                    {{-- <td class="num">Rs {{ number_format($balance, 0) }}</td> --}}
-                                    <td><span
-                                            class="status-pill status-{{ $order->status }}">{{ ucfirst($order->status) }}</span>
-                                    </td>
-                                    <td>
-                                        <a href="{{ route('orders.index', ['q' => $order->order_no]) }}"
-                                            class="row-edit-btn">Open</a>
-                                    </td>
-                                </tr>
-                            @empty
+                    <div class="report-table-wrap">
+                        <table class="report-table order-worklist">
+                            <thead>
                                 <tr>
-                                    <td colspan="7" class="report-empty">No pending orders — everything is delivered.
-                                    </td>
+                                    <th>Suit #</th>
+                                    <th>Customer</th>
+                                    {{-- <th>Phone</th> --}}
+                                    <th>Due Date</th>
+                                    {{-- <th>Balance</th> --}}
+                                    <th>Status</th>
                                 </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-
-                @if ($pendingOrders->hasPages())
-                    <div class="cust-pagination" style="margin-top:12px;">
-                        @if ($pendingOrders->onFirstPage())
-                            <span class="cp-btn cp-disabled">&larr; Prev</span>
-                        @else
-                            <a href="{{ $pendingOrders->previousPageUrl() }}#worklist" class="cp-btn">&larr; Prev</a>
-                        @endif
-                        <span class="cp-status">Page {{ $pendingOrders->currentPage() }} of
-                            {{ $pendingOrders->lastPage() }} &middot; {{ $pendingOrders->total() }}
-                            order{{ $pendingOrders->total() === 1 ? '' : 's' }}</span>
-                        @if ($pendingOrders->hasMorePages())
-                            <a href="{{ $pendingOrders->nextPageUrl() }}#worklist" class="cp-btn">Next &rarr;</a>
-                        @else
-                            <span class="cp-btn cp-disabled">Next &rarr;</span>
-                        @endif
+                            </thead>
+                            <tbody>
+                                @forelse ($pendingOrders as $order)
+                                    <tr class="due-row due-row--{{ $order->due_state }}"
+                                        onclick="window.location='{{ route('orders.index', ['q' => $order->order_no]) }}'"
+                                        style="cursor:pointer;">
+                                        <td class="num">{{ $order->order_no }}</td>
+                                        <td class="cust-name">{{ $order->customer->name ?? '—' }}</td>
+                                        {{-- <td class="num">{{ $order->customer->phone ?? '—' }}</td> --}}
+                                        <td class="num">
+                                            <span class="due-badge due-badge--{{ $order->due_state }}">
+                                                @if ($order->due_state === 'overdue')
+                                                    Late
+                                                @elseif ($order->due_state === 'today')
+                                                    Today
+                                                @else
+                                                    Upcoming
+                                                @endif
+                                            </span>
+                                            {{ optional($order->delivery_date)->format('d M Y') ?? '—' }}
+                                        </td>
+                                        {{-- <td class="num">Rs {{ number_format($balance, 0) }}</td> --}}
+                                        <td><span
+                                                class="status-pill status-{{ $order->status }}">{{ ucfirst($order->status) }}</span>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="4" class="report-empty">No pending orders — everything is delivered.
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
                     </div>
-                @endif
 
-                <div style="text-align: center; margin-top: 14px;">
-                    <a href="{{ route('report.index') }}" class="btn btn-brass">See All Orders</a>
-                </div>
-            </div>
+                    @if ($pendingOrders->hasPages())
+                        <div class="cust-pagination" style="margin-top:12px;">
+                            @if ($pendingOrders->onFirstPage())
+                                <span class="cp-btn cp-disabled">&larr; Prev</span>
+                            @else
+                                <a href="{{ $pendingOrders->previousPageUrl() }}#worklist" class="cp-btn">&larr; Prev</a>
+                            @endif
+                            <span class="cp-status">Page {{ $pendingOrders->currentPage() }} of
+                                {{ $pendingOrders->lastPage() }} &middot; {{ $pendingOrders->total() }}
+                                order{{ $pendingOrders->total() === 1 ? '' : 's' }}</span>
+                            @if ($pendingOrders->hasMorePages())
+                                <a href="{{ $pendingOrders->nextPageUrl() }}#worklist" class="cp-btn">Next &rarr;</a>
+                            @else
+                                <span class="cp-btn cp-disabled">Next &rarr;</span>
+                            @endif
+                        </div>
+                    @endif
 
-            {{-- RIGHT: Charts stacked vertically --}}
-            <div class="dash-grid-charts">
-                <div class="dash-chart-card">
-                    <h2 class="dash-subtitle" style="font-size:15px; margin-bottom:10px;">Orders per Day ( Last Month)</h2>
-                    <div class="dash-chart-box"><canvas id="ordersChart"></canvas></div>
+                    <div style="text-align: center; margin-top: 14px;">
+                        <a href="{{ route('report.index') }}" class="btn btn-brass">See All Orders</a>
+                    </div>
                 </div>
-                <div class="dash-chart-card">
-                    <h2 class="dash-subtitle" style="font-size:15px; margin-bottom:10px;">Amount Received Per Day (Last
-                        Month)</h2>
-                    <div class="dash-chart-box"><canvas id="collectedChart"></canvas></div>
-                </div>
-            </div>
 
-        </div>{{-- /dash-grid --}}
+                {{-- RIGHT: Charts stacked vertically --}}
+                <div class="dash-grid-charts">
+                    <div class="dash-chart-card">
+                        <h2 class="dash-subtitle" style="font-size:13px; margin-bottom:10px;">Orders per Day ( Last Month)
+                        </h2>
+                        <div class="dash-chart-box"><canvas id="ordersChart"></canvas></div>
+                    </div>
+                    <div class="dash-chart-card">
+                        <h2 class="dash-subtitle" style="font-size:13px; margin-bottom:10px;">Amount Received Per Day (Last
+                            Month)</h2>
+                        <div class="dash-chart-box"><canvas id="collectedChart"></canvas></div>
+                    </div>
+                </div>
+
+            </div>{{-- /dash-grid --}}
 
     </main>
 

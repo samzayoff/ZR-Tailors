@@ -24,8 +24,8 @@ class CustomerController
 
         if ($search !== '') {
             $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%");
-                //   ->orWhere('phone', 'like', "%{$search}%");
+                                $q->where('name', 'like', "%{$search}%")
+                                    ->orWhere('phone', 'like', "%{$search}%");
 
                 if (ctype_digit($search)) {
                     $q->orWhere('id', (int) $search);
@@ -33,7 +33,7 @@ class CustomerController
             });
         }
 
-        $customers = $query->orderBy('id')->paginate(25)->withQueryString();
+        $customers = $query->orderBy('id')->paginate(10)->withQueryString();
 
         return view('customers.index', [
             'customers' => $customers,

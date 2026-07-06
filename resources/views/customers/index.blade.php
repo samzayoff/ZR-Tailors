@@ -9,7 +9,8 @@
         <form method="GET" action="{{ route('customers.index') }}" class="searchbar">
             <div class="field">
                 <label>Search</label>
-                <input type="text" name="q" value="{{ $search }}" placeholder="Enter Customer Number">
+                <input type="text" name="q" value="{{ $search }}"
+                    placeholder="Enter Customer ID or Phone Number">
             </div>
             <button type="submit" class="btn btn-primary">Search</button>
             @if ($search !== '')

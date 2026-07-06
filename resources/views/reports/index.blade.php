@@ -11,21 +11,28 @@
             }
             if (!empty($selectedPayment)) {
                 $payLabels = ['paid' => 'Paid', 'unpaid' => 'Unpaid', 'partial' => 'Partial Paid'];
-                $printParts[] = implode(' / ', array_map(fn($p) => $payLabels[$p] ?? ucfirst($p), $selectedPayment)) . ' Payment';
+                $printParts[] =
+                    implode(' / ', array_map(fn($p) => $payLabels[$p] ?? ucfirst($p), $selectedPayment)) . ' Payment';
             }
             if ($search !== '') {
                 $printParts[] = 'Search: "' . $search . '"';
             }
 
-            $printTitle = count($printParts) > 0
-                ? implode(' · ', $printParts)
-                : 'All Orders';
+            $printTitle = count($printParts) > 0 ? implode(' · ', $printParts) : 'All Orders';
 
             $dateLabel = $dateField === 'delivery_date' ? 'Delivery' : 'Booking';
-            $printTitle .= ' (' . $dateLabel . ': ' . \Carbon\Carbon::parse($dateFrom)->format('d M Y') . ' – ' . \Carbon\Carbon::parse($dateTo)->format('d M Y') . ')';
+            $printTitle .=
+                ' (' .
+                $dateLabel .
+                ': ' .
+                \Carbon\Carbon::parse($dateFrom)->format('d M Y') .
+                ' – ' .
+                \Carbon\Carbon::parse($dateTo)->format('d M Y') .
+                ')';
         @endphp
 
-        <div class="report-header-wrap" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <div class="report-header-wrap"
+            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
             <h1 class="report-title" style="margin: 0;">Report</h1>
             <button type="button" class="btn btn-ghost rt-print-btn" onclick="window.print()">🖨 Print</button>
         </div>
@@ -47,7 +54,7 @@
             <div class="rf-body" id="rfBody" style="display:none;">
                 <form method="GET" action="{{ route('report.index') }}" class="report-filters" id="reportFilters">
                     {{-- Preserve sort params across filter submits --}}
-                    <input type="hidden" name="sort_by"  value="{{ $sortBy }}">
+                    <input type="hidden" name="sort_by" value="{{ $sortBy }}">
                     <input type="hidden" name="sort_dir" value="{{ $sortDir }}">
 
                     {{-- Calendar range --}}
@@ -63,8 +70,10 @@
                         <div class="cf">
                             <label>Date type</label>
                             <select name="date_field" class="status-select">
-                                <option value="booking_date" {{ $dateField === 'booking_date' ? 'selected' : '' }}>Booking date</option>
-                                <option value="delivery_date" {{ $dateField === 'delivery_date' ? 'selected' : '' }}>Delivery date</option>
+                                <option value="booking_date" {{ $dateField === 'booking_date' ? 'selected' : '' }}>Booking
+                                    date</option>
+                                <option value="delivery_date" {{ $dateField === 'delivery_date' ? 'selected' : '' }}>
+                                    Delivery date</option>
                             </select>
                         </div>
                     </div>
@@ -74,7 +83,8 @@
                         <span class="rf-label">Order status</span>
                         <div class="rf-pills">
                             @foreach ($statuses as $s)
-                                <label class="rf-pill status-{{ $s }} {{ in_array($s, $selectedStatuses) ? 'on' : '' }}">
+                                <label
+                                    class="rf-pill status-{{ $s }} {{ in_array($s, $selectedStatuses) ? 'on' : '' }}">
                                     <input type="checkbox" name="status[]" value="{{ $s }}"
                                         {{ in_array($s, $selectedStatuses) ? 'checked' : '' }}>
                                     {{ ucfirst($s) }}
@@ -88,7 +98,8 @@
                         <span class="rf-label">Payment status</span>
                         <div class="rf-pills">
                             @foreach ($paymentStatuses as $p)
-                                <label class="rf-pill pay-{{ $p }} {{ in_array($p, $selectedPayment) ? 'on' : '' }}">
+                                <label
+                                    class="rf-pill pay-{{ $p }} {{ in_array($p, $selectedPayment) ? 'on' : '' }}">
                                     <input type="checkbox" name="payment_status[]" value="{{ $p }}"
                                         {{ in_array($p, $selectedPayment) ? 'checked' : '' }}>
                                     {{ $p === 'partial' ? 'Partial Paid' : ucfirst($p) }}
@@ -136,19 +147,19 @@
                     @php
                         $sortFields = [
                             'customer_id' => 'Cust #',
-                            'order_no'    => 'Suit #',
-                            'balance'     => 'Balance',
+                            'order_no' => 'Suit #',
+                            'balance' => 'Balance',
                         ];
                     @endphp
                     @foreach ($sortFields as $field => $label)
                         @php
                             $isActive = $sortBy === $field;
-                            $nextDir  = ($isActive && $sortDir === 'asc') ? 'desc' : 'asc';
-                            $arrow    = $isActive ? ($sortDir === 'asc' ? '↑' : '↓') : '';
+                            $nextDir = $isActive && $sortDir === 'asc' ? 'desc' : 'asc';
+                            $arrow = $isActive ? ($sortDir === 'asc' ? '↑' : '↓') : '';
                         @endphp
-                        <a href="{{ route('report.index', array_merge(request()->except(['sort_by','sort_dir']), ['sort_by' => $field, 'sort_dir' => $nextDir])) }}#report-table"
-                           class="rt-sort-btn {{ $isActive ? 'active' : '' }}">
-                            {{ $label }}{{ $arrow ? ' '.$arrow : '' }}
+                        <a href="{{ route('report.index', array_merge(request()->except(['sort_by', 'sort_dir']), ['sort_by' => $field, 'sort_dir' => $nextDir])) }}#report-table"
+                            class="rt-sort-btn {{ $isActive ? 'active' : '' }}">
+                            {{ $label }}{{ $arrow ? ' ' . $arrow : '' }}
                         </a>
                     @endforeach
                 </div>
@@ -182,19 +193,20 @@
                         <th>Balance</th>
                         <th>Status</th>
                         <th>Payment</th>
-                        <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse ($orders as $order)
                         @php
-                            $balance   = max(0, $order->price - $order->advance_paid);
+                            $balance = max(0, $order->price - $order->advance_paid);
                             $payStatus = \App\Http\Controllers\ReportController::paymentStatusFor($order);
                         @endphp
-                        <tr>
+                        <tr onclick="window.location='{{ route('orders.index', ['q' => $order->order_no]) }}'"
+                            style="cursor:pointer;">
                             <td class="num">{{ $order->customer?->id ?? '—' }}</td>
                             <td class="num">
-                                <a href="{{ route('orders.index', ['q' => $order->order_no]) }}">{{ $order->order_no }}</a>
+                                <a
+                                    href="{{ route('orders.index', ['q' => $order->order_no]) }}">{{ $order->order_no }}</a>
                             </td>
                             <td>{{ $order->customer?->name ?? '—' }}</td>
                             <td class="num">{{ $order->customer?->phone ?? '—' }}</td>
@@ -203,16 +215,16 @@
                             <td class="num">{{ number_format($order->price, 0) }}</td>
                             <td class="num">{{ number_format($order->advance_paid, 0) }}</td>
                             <td class="num">{{ number_format($balance, 0) }}</td>
-                            <td><span class="status-pill status-{{ $order->status }}">{{ ucfirst($order->status) }}</span></td>
-                            <td><span class="pay-pill pay-{{ $payStatus }}">{{ $payStatus === 'partial' ? 'Partial Paid' : ucfirst($payStatus) }}</span></td>
-                            <td>
-                                <a href="{{ route('orders.index', ['q' => $order->order_no]) }}"
-                                    class="row-edit-btn">Edit</a>
+                            <td><span
+                                    class="status-pill status-{{ $order->status }}">{{ ucfirst($order->status) }}</span>
+                            </td>
+                            <td><span
+                                    class="pay-pill pay-{{ $payStatus }}">{{ $payStatus === 'partial' ? 'Partial Paid' : ucfirst($payStatus) }}</span>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="12" class="report-empty">No orders match the selected filters.</td>
+                            <td colspan="11" class="report-empty">No orders match the selected filters.</td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -251,24 +263,26 @@
         var filtersOpenOnLoad = {{ $hasActiveFilters ? 'true' : 'false' }};
 
         function toggleFilters(forceOpen) {
-            var body  = document.getElementById('rfBody');
+            var body = document.getElementById('rfBody');
             var arrow = document.getElementById('rfArrow');
-            var btn   = document.getElementById('rfToggleBtn');
+            var btn = document.getElementById('rfToggleBtn');
             var isOpen = body.style.display !== 'none';
 
             if (forceOpen === true || (!isOpen && forceOpen !== false)) {
                 body.style.display = 'block';
-                arrow.textContent  = '▲';
+                arrow.textContent = '▲';
                 btn.setAttribute('aria-expanded', 'true');
             } else {
                 body.style.display = 'none';
-                arrow.textContent  = '▼';
+                arrow.textContent = '▼';
                 btn.setAttribute('aria-expanded', 'false');
             }
         }
 
         // Auto-open filters if active filters are applied (so user sees their settings)
-        if (filtersOpenOnLoad) { toggleFilters(true); }
+        if (filtersOpenOnLoad) {
+            toggleFilters(true);
+        }
 
         // Auto-submit the filter form whenever a pill or the date-type select changes.
         document.getElementById('reportFilters').addEventListener('change', function(e) {
@@ -284,11 +298,13 @@
                 if (el) {
                     // Small delay to let browser finish painting
                     setTimeout(function() {
-                        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        el.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
                     }, 80);
                 }
             }
         })();
     </script>
 @endsection
-

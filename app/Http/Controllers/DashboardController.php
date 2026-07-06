@@ -39,7 +39,7 @@ class DashboardController
         $pendingOrders = Order::with('customer')
             ->whereNotIn('status', ['delivered', 'cancelled'])
             ->orderBy('delivery_date')
-            ->paginate(12, ['*'], 'page')
+            ->paginate(10, ['*'], 'page')
             ->withQueryString();
 
         $pendingOrders->getCollection()->transform(function ($order) use ($today) {
@@ -91,8 +91,11 @@ class DashboardController
         // ── Total orders 
         $totalOrders = Order::count();
 
-        // ── Total sales
-        $totalSales = Order::whereNotIn('status', self::EXCLUDED_SALE_STATUSES)->sum('price');
+        // ── Total paid sales (cash actually received)
+        $totalSales = Payment::whereHas('order', function ($q) {
+            $q->whereNotIn('status', self::EXCLUDED_SALE_STATUSES);
+        })
+            ->sum('amount');
 
         // ── Total due orders 
         $totalDueOrders = Order::whereDate('delivery_date', '<', $today)
@@ -100,7 +103,7 @@ class DashboardController
             ->count();
 
         return view('dashboard.index', [
-            'todaySales' => $bookedToday->whereNotIn('status', self::EXCLUDED_SALE_STATUSES)->sum('price'),
+            'todaySales' => $collectedToday,
             'todayCollected' => $collectedToday,
             'ordersToday' => $bookedToday->count(),
             'dueTodayCount' => $dueToday->count(),
